@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from '_macros.html' import ajuda_titulo, pre_titulo %}
+{% from "_macros.html" import cabecalho_tabela %}
+{% block titulo %}Inventário{% endblock %}
+{% block conteudo %}
+{{ pre_titulo('Inventário') }}
+<div class="d-flex align-items-center mb-4"><h1 class="mb-0">Inventário</h1>{{ ajuda_titulo(AJUDA_ANCORA) }}
+  {% if pode_administrar %}<a class="br-button secondary ml-auto" href="{{ url_for('admin.tela') }}"><i class="fas fa-cogs mr-1" aria-hidden="true"></i>Administrar inventários</a>{% endif %}</div>
+{% if corrente %}
+<div class="br-card mb-4">
+  <div class="card-header"><div class="text-weight-semi-bold text-up-02">{{ corrente.nome }}
+      {% if corrente.estado == 'fechado' %}<span class="br-tag bg-warning ml-2"><span>fechado</span></span>{% else %}<span class="br-tag bg-success text-pure-0 ml-2"><span>aberto</span></span>{% endif %}</div>
+    <div class="text-down-01 text-gray-70">Criado em {{ corrente.aberto_em[8:10] }}/{{ corrente.aberto_em[5:7] }}/{{ corrente.aberto_em[:4] }}{% if corrente.descricao %} · {{ corrente.descricao }}{% endif %} · Comissão: {{ corrente.integrantes|join(', ') }}</div></div>
+  <div class="card-content">
+    {% set r = corrente.resumo %}
+    <div class="row">
+      {% for valor, legenda in [(r.salas_iniciadas ~ ' / ' ~ r.salas, 'salas iniciadas'), (r.lidos ~ ' / ' ~ r.bens, 'bens localizados'), (r.divergentes, 'divergentes'), (r.pendentes, 'pendentes'), (r.sobras, 'sobras')] %}
+      <div class="col-6 col-md mb-3"><div class="text-up-03 text-weight-bold">{{ valor }}</div><div class="text-down-01 text-gray-70">{{ legenda }}</div></div>
+      {% endfor %}
+    </div>
+    {% if corrente.estado == 'fechado' %}
+    <div class="br-message warning mb-3"><div class="icon"><i class="fas fa-pause-circle fa-lg" aria-hidden="true"></i></div>
+      <div class="content"><span class="message-title">Inventário fechado.</span><span class="message-body"> A leitura está suspensa até o administrador reabrir; consulta liberada.</span></div></div>
+    {% else %}
+    <div class="mb-3">
+      <p class="text-gray-70 mb-1" id="progresso-{{ corrente.id }}">{{ r.pct_bens }}% dos bens localizados.</p>
+      <progress class="dsgov-barra" value="{{ r.pct_bens }}" max="100" aria-labelledby="progresso-{{ corrente.id }}">{{ r.pct_bens }}%</progress>
+    </div>
+    {% endif %}
+    <a class="br-button primary" href="{{ url_for('inventario.evento_tela', id=corrente.id) }}"><i class="fas fa-door-open mr-1" aria-hidden="true"></i>{% if corrente.estado == 'aberto' and pode('inventario.ler', 'POST') %}Salas e leitura{% else %}Salas{% endif %}</a>
+    {% if pode_relatorios %}<a class="br-button secondary ml-2" href="{{ url_for('inventario.relatorio_tela', id=corrente.id) }}"><i class="fas fa-table mr-1" aria-hidden="true"></i>Relatório</a>{% endif %}
+  </div>
+</div>
+{% else %}
+<p class="text-gray-70">{% if eventos %}Nenhum inventário aberto ou fechado no momento.{% elif pode_administrar %}Nenhum inventário criado. Crie um em Administrar inventários.{% else %}Nenhum inventário atribuído a você. Quando a comissão de um evento incluir seu usuário, ele aparece aqui.{% endif %}</p>
+{% endif %}
+{% if eventos %}
+{{ cabecalho_tabela('Outros inventários', 'eventos') }}
+  <thead><tr><th scope="col">Inventário</th><th scope="col">Estado</th><th scope="col">Criado em</th><th scope="col">Finalizado em</th>{% if pode_relatorios %}<th scope="col" class="dsgov-acoes">Relatório</th>{% endif %}</tr></thead>
+  <tbody>{% for e in eventos %}
+  <tr><td><a href="{{ url_for('inventario.evento_tela', id=e.id) }}">{{ e.nome }}</a></td>
+    <td>{% if e.estado == 'aberto' %}<span class="br-tag bg-success text-pure-0"><span>aberto</span></span>{% elif e.estado == 'fechado' %}<span class="br-tag bg-warning"><span>fechado</span></span>{% else %}<span class="br-tag bg-gray-20"><span>finalizado</span></span>{% endif %}</td>
+    <td>{{ e.aberto_em[8:10] }}/{{ e.aberto_em[5:7] }}/{{ e.aberto_em[:4] }}</td><td>{% if e.encerrado_em %}{{ e.encerrado_em[8:10] }}/{{ e.encerrado_em[5:7] }}/{{ e.encerrado_em[:4] }}{% else %}—{% endif %}</td>
+    {% if pode_relatorios %}<td class="dsgov-acoes"><a class="br-button circle small" href="{{ url_for('inventario.relatorio_tela', id=e.id) }}" aria-label="Relatório de {{ e.nome }}"><i class="fas fa-table" aria-hidden="true"></i></a></td>{% endif %}</tr>
+  {% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% endblock %}

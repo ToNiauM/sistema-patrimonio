@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from '_macros.html' import ajuda_titulo, pre_titulo %}
+{% block titulo %}Bem {{ bem.numero }}{% endblock %}
+{% block conteudo %}
+{{ pre_titulo('Patrimônio') }}
+<div class="d-flex align-items-center mb-4">
+  <h1 class="mb-0">Bem {{ bem.numero }}</h1>{{ ajuda_titulo(AJUDA_ANCORA) }}
+  <div class="ml-auto"><a class="br-button" href="{{ URL_INICIAL }}">Voltar</a></div>
+</div>
+<div class="br-card"><div class="card-content">
+  <dl class="dsgov-detalhe row">
+    <div class="col-md-6"><dt>Descrição</dt><dd>{{ bem.descricao }}</dd></div>
+    <div class="col-md-6"><dt>Complemento</dt><dd>{{ bem.complemento or '—' }}</dd></div>
+    <div class="col-md-6"><dt>Situação</dt><dd>{{ bem.situacao }}</dd></div>
+    <div class="col-md-6"><dt>Localização</dt><dd>{{ bem.localizacao or '—' }}</dd></div>
+    <div class="col-md-6"><dt>Valor atual</dt><dd>{{ (bem.valor_atual or 0)|moeda }}</dd></div>
+    <div class="col-md-6"><dt>Centro de custo</dt>
+      <dd>{% if bem.ccustos %}<a href="{{ url_for('termo', tipo='ccusto', chave=bem.ccustos) }}">{{ bem.ccustos }}</a> — {{ bem.responsavel }}{% else %}sem mapeamento{% endif %}</dd></div>
+    <div class="col-md-6"><dt>Responsável individual</dt>
+      <dd>{% if bem.pessoa %}<a href="{{ url_for('termo', tipo='individual', chave=bem.pessoa) }}">{{ bem.pessoa }}</a>{% else %}— (responde o setor){% endif %}</dd></div>
+  </dl>
+</div></div>
+<h2 class="text-up-01 mt-4 mb-2">Histórico</h2>
+<div class="row">
+  <div class="col-md-6 mb-3"><div class="br-card h-100"><div class="card-header"><div class="text-weight-semi-bold">Movimentações (importações)</div></div><div class="card-content">
+    {% for m in historico.mudancas %}
+    <div class="mb-2"><span class="text-gray-70">{{ m.importado_em[8:10] }}/{{ m.importado_em[5:7] }}/{{ m.importado_em[:4] }}</span> · <strong>{{ m.tipo }}</strong>{% if m.de or m.para %}: {{ m.de or '—' }} → {{ m.para or '—' }}{% endif %}</div>
+    {% else %}<p class="text-gray-70 mb-0">Nenhuma mudança registrada.</p>{% endfor %}
+  </div></div></div>
+  <div class="col-md-6 mb-3"><div class="br-card h-100"><div class="card-header"><div class="text-weight-semi-bold">Termos em que apareceu</div></div><div class="card-content">
+    {% for t in historico.termos %}
+    <div class="mb-2"><a href="{{ url_for('termo_emitido_tela', id=t.id) }}">{{ t.emitido_em[8:10] }}/{{ t.emitido_em[5:7] }}/{{ t.emitido_em[:4] }}</a> · {{ rotulos[t.tipo] }} · {{ t.chave }}{% if t.documento_sei %} · SEI {{ t.documento_sei }}{% endif %}</div>
+    {% else %}<p class="text-gray-70 mb-0">Nenhum termo registrado com este bem.</p>{% endfor %}
+  </div></div></div>
+</div>
+{% if fotos %}
+<h2 class="text-up-01 mt-4 mb-2">Fotos do inventário</h2>
+<div class="br-card"><div class="card-content">
+  {% for g in fotos %}
+  <div class="{% if not loop.last %}mb-3{% endif %}">
+    <div class="mb-1"><strong>{{ g.evento }}</strong> <span class="text-gray-70">· aberto em {{ g.aberto_em[8:10] }}/{{ g.aberto_em[5:7] }}/{{ g.aberto_em[:4] }}{% if g.encerrado_em %} · encerrado em {{ g.encerrado_em[8:10] }}/{{ g.encerrado_em[5:7] }}/{{ g.encerrado_em[:4] }}{% endif %} · lido em {{ g.lido_em[8:10] }}/{{ g.lido_em[5:7] }}/{{ g.lido_em[:4] }} {{ g.lido_em[11:16] }}</span></div>
+    <div class="d-flex flex-wrap">{% for f in g.fotos %}{% if f.url.startswith(('http://', 'https://')) %}<a class="mr-1 mb-1" href="{{ f.url }}" target="_blank" rel="noopener"><img src="{{ f.url }}" alt="Foto {{ f.nfoto }} do bem {{ bem.numero }} no evento {{ g.evento }}" class="dsgov-miniatura"/></a>{% endif %}{% endfor %}</div>
+  </div>
+  {% endfor %}
+</div></div>
+{% endif %}
+{% endblock %}

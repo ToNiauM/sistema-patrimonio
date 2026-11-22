@@ -1,0 +1,43 @@
+# Ambientes virtuais
+.venv/
+venv/
+.venv-robo/
+
+# Cache do Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Arquivos do PyCharm
+.idea/
+
+# Arquivos temporários e configs
+*.log
+*.env
+*.sqlite3
+*.DS_Store
+
+# Outras pastas geradas por pacotes
+*.egg-info/
+
+# Dados do programa (banco, termos gerados) e build
+dados/*
+!dados/migrar_evento_2026.py
+!dados/relatorio_para_base.py
+!dados/depara_localizacoes_2026.csv
+build/
+dist/
+*.spec
+secrets/
+
+# Scripts
+
+scripts/backup.sh
+
+# Planilha de dados reais deixada solta na raiz
+
+# Cópia do banco usada pela prévia do Tabler (compose.previa.yml)
+dados-previa/
+
+# site gerado pelo MkDocs
+site/

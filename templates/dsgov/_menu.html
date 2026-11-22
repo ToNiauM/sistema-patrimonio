@@ -1,0 +1,40 @@
+{#- Menu da família CFC (padrão DSGov, componentes/menu.md): logo do CFC + sistema no menu-header, "Início" primeiro,
+    pasta só abre/fecha (href="javascript:void(0)"; o sistema não tem CSP), página corrente active + aria-current,
+    pasta da página corrente aberta, órgão no menu-footer. A árvore vem de menu.montar (contexto MENU). #}
+        <div class="br-menu" id="main-navigation">
+          <div class="menu-container">
+            <div class="menu-panel">
+              <div class="menu-header">
+                <div class="menu-title">
+                  <img src="{{ url_for('static', filename='img/logo-cfc.png') }}" alt="{{ DSGOV.ORGAO }}"/>
+                  <span>{{ DSGOV.SISTEMA }}</span>
+                </div>
+                <div class="menu-close">
+                  <button class="br-button circle" type="button" aria-label="Fechar o menu" data-dismiss="menu"><i class="fas fa-times" aria-hidden="true"></i></button>
+                </div>
+              </div>
+              <nav class="menu-body" role="tree">
+                {% for i in MENU %}
+                {% if i.filhos %}
+                <div class="menu-folder{% if i.aberto %} active{% endif %}">
+                  <a class="menu-item" href="javascript:void(0)" role="treeitem" aria-expanded="{{ 'true' if i.aberto else 'false' }}"><span class="icon"><i class="fas {{ i.icone }}" aria-hidden="true"></i></span><span class="content">{{ i.rotulo }}</span></a>
+                  <ul>
+                    {% for f in i.filhos %}
+                    <li><a class="menu-item{% if f.ativo %} active{% endif %}" href="{{ f.url }}" role="treeitem"{% if f.ativo %} data-atual="true" aria-current="page"{% endif %}>{% if f.icone %}<span class="icon"><i class="fas {{ f.icone }}" aria-hidden="true"></i></span>{% endif %}<span class="content">{{ f.rotulo }}</span></a></li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                {% else %}
+                <a class="menu-item{% if i.ativo %} active{% endif %}" href="{{ i.url }}" role="treeitem"{% if i.ativo %} data-atual="true" aria-current="page"{% endif %}><span class="icon"><i class="fas {{ i.icone }}" aria-hidden="true"></i></span><span class="content">{{ i.rotulo }}</span></a>
+                {% endif %}
+                {% endfor %}
+              </nav>
+              <div class="menu-footer">
+                <div class="menu-info">
+                  <div class="text-center text-down-01">{{ DSGOV.ORGAO }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="menu-scrim" data-dismiss="menu" tabindex="0"></div>
+          </div>
+        </div>

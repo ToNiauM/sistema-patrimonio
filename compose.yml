@@ -1,0 +1,47 @@
+services:
+  web:
+    build:
+      context: .
+      target: web
+    image: termos-patrimonio:latest
+    container_name: termos-patrimonio
+    restart: unless-stopped
+    env_file:
+      # Credenciais do bucket de fotos (R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ENDPOINT_URL, R2_BUCKET_NAME, R2_PUBLIC_URL).
+      # Sem o arquivo, as fotos do inventário ficam desativadas e o resto funciona.
+      - path: secrets/.env
+        required: false
+    environment:
+      TERMOS_LOGIN: "1"     # site pede usuário e senha (o programa Windows não define e entra direto)
+      TERMOS_DESIGN: tabler # aparência Tabler; tirar esta linha (e docker compose up -d) volta ao DSGov
+      TZ: America/Sao_Paulo # hora de Brasília nos logs e no mtime de dados/
+    ports:
+      - "127.0.0.1:12012:8000"
+    volumes:
+      # termos.db e timbrado.docx vivem aqui; backup = copiar a pasta dados/
+      - ./dados:/app/dados
+      # chave das senhas (chaves.env) — ver README, Acessos por usuário
+      - ./secrets:/app/secrets:ro
+
+  # Trabalhador da fila robo_pedidos (emissão no SEI e atualização com o SPW), com Playwright e SeleniumBase
+  # (alvo robo do Dockerfile). Sobe permanente com `docker compose up -d`; sem ele o site
+  # continua funcionando, só que os pedidos ficam "aguardando a vez" (ver README, Emissão no SEI).
+  # O --teste de importar_spw.py roda dentro deste container via `docker compose exec` (scripts/atualizar_base.sh).
+  robo:
+    build:
+      context: .
+      target: robo
+    image: termos-patrimonio-robo:latest
+    container_name: termos-robo
+    restart: unless-stopped
+    environment:
+      TZ: America/Sao_Paulo
+    volumes:
+      - ./dados:/app/dados
+      - ./secrets:/app/secrets:ro
+    shm_size: "1gb"   # Chromium (Playwright) precisa de mais /dev/shm que o padrão do Docker
+    # O Chrome do SPW (sb_cdp) deixa processos filhos órfãos ao fechar; sem um init como PID 1 eles viram zumbis
+    # pendurados no atender_pedidos.py, que não os recolhe.
+    init: true
+    depends_on:
+      - web

@@ -1,0 +1,161 @@
+{# Componentes DSGov repetidos. HTML canônico de references/componentes/{message,select,table}.md #}
+
+{% macro mensagens() %}
+<div id="mensagens">
+{% for categoria, texto in get_flashed_messages(with_categories=true) %}
+  {% set tipo, icone, titulo = {'error': ('danger', 'fa-times-circle', 'Erro.'), 'warning': ('warning', 'fa-exclamation-triangle', 'Atenção.'), 'success': ('success', 'fa-check-circle', 'Sucesso.')}.get(categoria, ('info', 'fa-info-circle', 'Informação.')) %}
+  <div class="br-message {{ tipo }}">
+    <div class="icon"><i class="fas {{ icone }} fa-lg" aria-hidden="true"></i></div>
+    <div class="content" role="alert"><span class="message-title">{{ titulo }}</span><span class="message-body"> {{ texto }}</span></div>
+    <div class="close"><button class="br-button circle small" type="button" aria-label="Fechar a mensagem"><i class="fas fa-times" aria-hidden="true"></i></button></div>
+  </div>
+{% endfor %}
+</div>
+{% endmacro %}
+
+{% macro select(nome, rotulo, opcoes, selecionado=None, obrigatorio=True) %}
+{# br-select: input de exibição (não postado) + lista de radios que carregam name/value #}
+<div class="br-select">
+  <div class="br-input">
+    <label for="{{ nome }}_exibicao">{{ rotulo }}{% if obrigatorio %} <span class="text-danger" aria-hidden="true">*</span>{% endif %}</label>
+    <input id="{{ nome }}_exibicao" type="text" placeholder="Selecione" autocomplete="off"/>
+    <button class="br-button" type="button" aria-label="Exibir lista" tabindex="-1" data-trigger="data-trigger"><i class="fas fa-angle-down" aria-hidden="true"></i></button>
+  </div>
+  <div class="br-list" tabindex="0">
+    {% for opcao in opcoes %}
+    {% set valor, rotulo = (opcao, opcao) if opcao is string else opcao %}
+    <div class="br-item" tabindex="-1">
+      <div class="br-radio">
+        <input id="{{ nome }}_{{ loop.index }}" name="{{ nome }}" type="radio" value="{{ valor }}"{% if valor == selecionado %} checked="checked"{% endif %}{% if obrigatorio %} required{% endif %}/>
+        <label for="{{ nome }}_{{ loop.index }}">{{ rotulo }}</label>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endmacro %}
+
+{% macro cabecalho_tabela(titulo, id, selecao=False, servidor=False) %}
+{# abre um br-table com busca (e seleção de linhas, se selecao); quem chama fecha com </table></div>.
+   data-tabela: colunas ordenáveis e com largura ajustável (static/js/tabelas.js). servidor=True quando a lista
+   veio cortada (só os N primeiros): a ordenação volta ao servidor pelos th_ordem. #}
+<div class="br-table" data-search="data-search"{% if selecao %} data-selection="data-selection"{% endif %}>
+  <div class="table-header">
+    <div class="top-bar">
+      <div class="table-title">{{ titulo }}</div>
+      <div class="search-trigger">
+        <button class="br-button circle" type="button" id="busca-{{ id }}" data-toggle="search" aria-label="Abrir busca" aria-controls="campo-busca-{{ id }}"><i class="fas fa-search" aria-hidden="true"></i></button>
+      </div>
+    </div>
+    <div class="search-bar">
+      <div class="br-input">
+        <label for="campo-busca-{{ id }}">Buscar na tabela</label>
+        <input id="campo-busca-{{ id }}" type="search" placeholder="Buscar na tabela" aria-labelledby="busca-{{ id }}" aria-label="Buscar na tabela"/>
+        <button class="br-button" type="button" aria-label="Buscar"><i class="fas fa-search" aria-hidden="true"></i></button>
+      </div>
+      <button class="br-button circle" type="button" data-dismiss="search" aria-label="Fechar busca"><i class="fas fa-times" aria-hidden="true"></i></button>
+    </div>
+    {% if selecao %}
+    <div class="selected-bar">
+      <div class="info"><span class="count">0</span><span class="text">item selecionado</span></div>
+    </div>
+    {% endif %}
+  </div>
+  <table id="dados-{{ id }}" data-tabela{% if servidor %} data-tabela-ordem="servidor"{% endif %}>
+    <caption class="sr-only">{{ titulo }}</caption>
+{% endmacro %}
+
+{% macro th_ordem(rotulo, campo, classe='') %}
+{# cabeçalho de tabela ordenada no servidor (cabecalho_tabela(..., servidor=True)): tabelas.js troca ?ordem=campo&dir= #}
+<th scope="col"{% if classe %} class="{{ classe }}"{% endif %} data-ordem="{{ campo }}"{% if request.args.get('ordem') == campo %} aria-sort="{{ 'descending' if request.args.get('dir') == 'desc' else 'ascending' }}"{% endif %}>{{ rotulo }}</th>
+{% endmacro %}
+
+
+{% macro th_selecao(id) %}
+<th class="column-checkbox" scope="col"><div class="br-checkbox hidden-label"><input id="check-all-{{ id }}" name="check-all-{{ id }}" type="checkbox" aria-label="Selecionar tudo" data-parent="check-{{ id }}"/><label for="check-all-{{ id }}">Selecionar todas as linhas</label></div></th>
+{% endmacro %}
+
+{% macro td_selecao(id, indice, name, value, form=None) %}
+<td class="column-checkbox"><div class="br-checkbox hidden-label"><input id="check-{{ id }}-{{ indice }}" name="{{ name }}" type="checkbox" value="{{ value }}" data-child="check-{{ id }}"{% if form %} form="{{ form }}"{% endif %}/><label for="check-{{ id }}-{{ indice }}">Selecionar linha</label></div></td>
+{% endmacro %}
+
+{% macro tag_termo(s) %}
+{# s = dict de db.situacao_termo #}
+{% if s.estado == 'vigente' %}<span class="br-tag bg-success text-pure-0"><span>vigente</span></span>
+{% elif s.estado == 'desatualizado' %}<span class="br-tag bg-warning"><span>desatualizado +{{ s.entraram }} −{{ s.sairam }}</span></span>
+{% else %}<span class="br-tag bg-gray-20"><span>sem termo</span></span>{% endif %}
+{% endmacro %}
+
+{% macro tag_email(s) %}
+{# s = dict de db.situacao_termo; sinaliza o pedido de assinatura do último termo e leva ao registro #}
+{% if not s.ultimo %}—
+{% elif s.ultimo.email_enviado_em %}<a href="{{ url_for('termo_emitido_tela', id=s.ultimo.id) }}" class="br-tag bg-success text-pure-0"><span>enviado {{ s.ultimo.email_enviado_em[8:10] }}/{{ s.ultimo.email_enviado_em[5:7] }}</span></a>
+{% elif s.ultimo.documento_sei and s.ultimo.bloco_sei %}<a href="{{ url_for('termo_emitido_tela', id=s.ultimo.id) }}" class="br-tag bg-warning"><span>não enviado</span></a>
+{% else %}<a href="{{ url_for('termo_emitido_tela', id=s.ultimo.id) }}" class="br-tag bg-gray-20"><span>sem doc./bloco</span></a>{% endif %}
+{% endmacro %}
+
+{% macro grafico(g) %}
+{# g = {id, titulo, subtitulo, opcoes (dict ECharts), resumo (aria-label), alto (bool), altura, col, tabela (graficos.tabela_dados)}
+   Opcionais (painel.cards_analise): destaque = {forte, texto}, frase curta acima do gráfico; seletores = [{rotulo, opcoes:
+   [(valor, rótulo)]}] com variantes = [{id, opcoes, resumo, tabela}] — o id de cada variante é g.id + "--" + os valores
+   escolhidos nos br-select, na ordem; static/js/analise.js troca o gráfico e a tabela "Ver dados" da combinação. #}
+{% set variantes = g.variantes or [g] %}
+<div class="{{ g.col or 'col-sm-12 col-md-6' }} mb-3">
+  <div class="br-card h-100">
+    <div class="card-header">
+      {% if g.seletores %}<div class="row align-items-end">
+      <div class="col-12 col-md mb-2">{% endif %}
+      <div class="text-weight-semi-bold text-up-01">{{ g.titulo }}</div>
+      {% if g.subtitulo %}<div class="text-down-01 text-gray-70">{{ g.subtitulo }}</div>{% endif %}
+      {% if g.seletores %}</div>
+      {% for s in g.seletores %}
+      <div class="col-12 col-sm-6 col-md-auto mb-2" data-grafico-seletor="{{ g.id }}">{{ select(g.id ~ '-seletor-' ~ loop.index, s.rotulo, s.opcoes, selecionado=s.opcoes[0][0], obrigatorio=False) }}</div>
+      {% endfor %}
+      </div>{% endif %}
+    </div>
+    <div class="card-content">
+      {% if g.destaque %}<p class="text-up-01 mb-2"><span class="text-weight-bold">{{ g.destaque.forte }}</span> {{ g.destaque.texto }}</p>{% endif %}
+      {% for v in variantes %}<script type="application/json" id="{{ v.id }}"{% if g.seletores %} data-resumo="{{ v.resumo }}"{% endif %}>{{ v.opcoes|tojson }}</script>
+      {% endfor %}
+      <div class="{% if g.altura == 'extra' %}dsgov-grafico-extra{% elif g.alto %}dsgov-grafico-alto{% else %}dsgov-grafico{% endif %}" data-grafico="{{ variantes[0].id }}"{% if g.seletores %} data-grafico-base="{{ g.id }}"{% endif %} role="img" aria-label="{{ variantes[0].resumo }}"></div>
+      {% if variantes[0].tabela %}
+      <div class="br-accordion mt-2" id="acc-{{ g.id }}">
+        <div class="item">
+          <button class="header" type="button" aria-controls="acc-{{ g.id }}-dados" aria-expanded="false">
+            <span class="icon"><i class="fas fa-angle-down" aria-hidden="true"></i></span><span class="title">Ver dados</span>
+          </button>
+        </div>
+        <div class="content" id="acc-{{ g.id }}-dados">
+          {% for v in variantes %}
+          <div{% if g.seletores %} data-grafico-tabela="{{ v.id }}"{% if not loop.first %} hidden{% endif %}{% endif %}>
+          <div class="br-table small"><div class="table-header"></div>
+            <table data-tabela>
+              <caption class="sr-only">{{ g.titulo }} — dados</caption>
+              <thead><tr>{% for c in v.tabela.colunas %}<th scope="col"{% if not loop.first %} class="dsgov-numero"{% endif %}>{{ c }}</th>{% endfor %}</tr></thead>
+              <tbody>
+              {% for linha in v.tabela.linhas %}
+              <tr>{% for cel in linha %}<td{% if not loop.first %} class="dsgov-numero"{% endif %}>{% if cel.url %}<a href="{{ cel.url }}">{{ cel.valor }}</a>{% else %}{{ cel.valor }}{% endif %}</td>{% endfor %}</tr>
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro pre_titulo(texto) %}
+{# pré-título: a área da tela, em caixa alta, logo acima do cabeçalho h1 (o "page-pretitle" do Tabler), só com utilitários do DS #}
+{% if texto %}<p class="text-down-01 text-weight-semi-bold text-uppercase text-gray-60 mb-1">{{ texto }}</p>{% endif %}
+{% endmacro %}
+
+{% macro ajuda_titulo(ancora) %}
+{% if ancora %}<a class="br-button circle small ml-2" href="{{ url_for('ajuda') }}#{{ ancora }}" aria-label="Ajuda desta tela">
+  <i class="fas fa-question-circle" aria-hidden="true"></i>
+</a>{% endif %}
+{% endmacro %}

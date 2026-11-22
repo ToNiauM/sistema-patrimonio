@@ -1,0 +1,9 @@
+flask
+openpyxl
+python-docx
+pywebview
+pyinstaller
+pytest
+Pillow
+boto3
+cryptography

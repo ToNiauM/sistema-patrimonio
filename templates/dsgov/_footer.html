@@ -1,0 +1,20 @@
+{#- Rodapé da família CFC (padrão DSGov, _footer.html): parágrafo institucional e links à esquerda/direita, órgão e sistema na linha final. #}
+  <footer class="br-footer" id="footer">
+    <div class="container-lg">
+      <div class="dsgov-rodape">
+        <div class="dsgov-rodape-texto">
+          <p>O {{ DSGOV.SISTEMA }} controla os bens patrimoniais do {{ DSGOV.ORGAO }}: termos de responsabilidade, cadastros, análise do acervo e inventário.</p>
+        </div>
+        <nav class="dsgov-rodape-links" aria-label="Links do rodapé">
+          <a href="https://cfc.org.br" target="_blank" rel="noopener">Portal do CFC<i class="fas fa-external-link-alt ml-1" aria-hidden="true"></i></a>
+          {% if pode('ajuda') %}<a href="{{ url_for('ajuda') }}">Ajuda</a>{% endif %}
+        </nav>
+      </div>
+    </div>
+    <span class="br-divider"></span>
+    <div class="container-lg">
+      <div class="info">
+        <div class="text-down-01 text-medium text-center py-3">{{ DSGOV.ORGAO }} · <strong>{{ DSGOV.SISTEMA }}</strong></div>
+      </div>
+    </div>
+  </footer>

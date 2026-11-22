@@ -1,0 +1,122 @@
+/* patrimonio.css — regras PRÓPRIAS do Sistema de Patrimônio na casca DSGov (templates/), carregadas
+ * depois de static/dsgov/css/dsgov.css. O dsgov.css é cópia byte-idêntica do padrão DSGov (congelado:
+ * ao atualizar o padrão DSGov, copie o arquivo inteiro de novo); tudo o que só este sistema usa mora aqui,
+ * movido sem mudança do dsgov.css antigo em 22/10/2026. Cores, fontes e espaçamentos só por var(--...).
+ * Card de KPI em alerta: vale a regra do padrão DSGov (.dsgov-kpi.dsgov-kpi-alerta, faixa no topo).
+ */
+
+/* Card-indicador clicável do painel. */
+a.dsgov-kpi { display: block; color: inherit; text-decoration: none; }
+a.dsgov-kpi:hover { box-shadow: var(--surface-shadow-md); }
+/* Texto de erro do robô do SPW no card "última importação". */
+.dsgov-robo-erro { color: var(--danger, #e52207); }
+
+/* Inventário: miniatura da foto e área do leitor por câmera. */
+.dsgov-miniatura { width: 56px; height: 56px; object-fit: cover; border-radius: 4px; }
+.dsgov-leitor { max-width: 480px; }
+
+/* KPI: número principal sem quebra; detalhe (valor/segunda medida) em linha própria. */
+.dsgov-kpi .valor { font-size: var(--font-size-scale-up-03); font-weight: var(--font-weight-bold); line-height: 1.15; white-space: nowrap; }
+.dsgov-kpi .detalhe { font-size: var(--font-size-scale-up-01); font-weight: var(--font-weight-medium); white-space: nowrap; }
+
+/* Atalhos da tela inicial: grade responsiva de cards (Fase 5C tarefa 4 — substitui o carrossel). */
+.dsgov-atalhos { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--spacing-scale-2x); }
+.dsgov-atalhos a.dsgov-atalho { display: block; color: inherit; text-decoration: none; text-align: center; }
+.dsgov-atalhos a.dsgov-atalho:hover { box-shadow: var(--surface-shadow-md); }
+.dsgov-atalho-icone { font-size: var(--font-size-scale-up-05); color: var(--interactive); margin-bottom: var(--spacing-scale-base); }
+
+/* Tabelas ordenáveis e com largura ajustável (static/js/tabelas.js, <table data-tabela>).
+   Ordenar: botão sem moldura no cabeçalho, ícone fa-sort/-up/-down na cor interativa do DS; foco no padrão do DS. */
+.br-table th .tabela-ordenar { display: inline-flex; align-items: center; gap: var(--spacing-scale-base); padding: 0; margin: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: inherit; cursor: pointer; }
+.br-table th .tabela-ordenar:hover { text-decoration: underline; }
+.br-table th .tabela-ordenar:focus-visible { outline: var(--focus-width, 4px) var(--focus-style, dashed) var(--focus-color, var(--focus)); outline-offset: var(--focus-offset, 4px); }
+.br-table th .tabela-ordenar-icone { color: var(--gray-40); font-size: var(--font-size-scale-down-01); }
+.br-table th[aria-sort] .tabela-ordenar-icone { color: var(--interactive); }
+/* Alça de largura na borda direita do cabeçalho. */
+table[data-tabela] thead th { position: relative; }
+table[data-tabela] .tabela-alca { position: absolute; top: 0; right: -4px; bottom: 0; width: 9px; z-index: 2; cursor: col-resize; touch-action: none; }
+table[data-tabela] .tabela-alca::after { content: ""; position: absolute; top: 25%; bottom: 25%; left: 4px; width: var(--surface-width-sm, 1px); background: var(--gray-20); }
+table[data-tabela] thead th:last-child .tabela-alca { right: 0; }
+table[data-tabela] .tabela-alca:hover::after, table[data-tabela].tabela-redimensionando .tabela-alca::after { top: 0; bottom: 0; width: var(--surface-width-md, 2px); left: 3px; background: var(--interactive); }
+table[data-tabela] .tabela-alca:focus-visible { outline: var(--focus-width, 4px) var(--focus-style, dashed) var(--focus-color, var(--focus)); outline-offset: 0; }
+table.tabela-redimensionando { cursor: col-resize; user-select: none; }
+table.tabela-fixa { table-layout: fixed; }
+table.tabela-fixa th, table.tabela-fixa td { overflow: hidden; text-overflow: ellipsis; }
+@media print {
+  table[data-tabela] .tabela-alca, table[data-tabela] .tabela-ordenar-icone { display: none !important; }
+  table.tabela-fixa { table-layout: auto !important; width: auto !important; }
+  table.tabela-fixa th { width: auto !important; }
+}
+/* Celular: sem alças e sem largura salva — a tabela volta ao layout automático e rola na horizontal
+   dentro do contêiner (largura ajustada no computador não espreme colunas numa tela de 390px). */
+@media (max-width: 767.98px) {
+  table[data-tabela] .tabela-alca { display: none !important; }
+  table.tabela-fixa { table-layout: auto !important; width: auto !important; }
+  table.tabela-fixa th { width: auto !important; }
+  table.tabela-fixa th, table.tabela-fixa td { overflow: visible; text-overflow: clip; }
+}
+
+/* Busca nas tabelas (tabelas.js, prepararBusca): linha escondida pela busca, rodapé com a contagem. */
+.br-table tr[hidden] { display: none !important; }
+.br-table .table-footer .tabela-contagem { margin: 0; padding: var(--spacing-scale-base) 0; font-size: var(--font-size-scale-down-01); color: var(--gray-70); }
+
+/* Salas do evento no celular (inventario_evento.html, tabela #dados-salas): cada sala vira um bloco — nome e botão
+   de conferir na primeira linha, situação na segunda, números com rótulo (data-rotulo) na terceira; sem rolagem lateral. */
+@media (max-width: 767.98px) {
+  #dados-salas thead { display: none; }
+  #dados-salas, #dados-salas tbody { display: block; width: 100% !important; }
+  #dados-salas tbody tr { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-scale-half) var(--spacing-scale-2x); padding: var(--spacing-scale-baseh) var(--spacing-scale-2x); border-bottom: var(--surface-width-sm) solid var(--gray-20); }
+  #dados-salas tbody tr[hidden] { display: none; }
+  #dados-salas tbody td { display: block; padding: 0; border: 0; background: none; text-align: left; }
+  #dados-salas td[data-rotulo]::before { content: attr(data-rotulo) " "; color: var(--gray-60); font-size: var(--font-size-scale-down-01); }
+  #dados-salas td[data-coluna="sala"] { order: 1; flex: 1 1 0; font-weight: var(--font-weight-semi-bold); }
+  #dados-salas td.dsgov-acoes { order: 2; width: auto; }
+  #dados-salas td[data-coluna="situacao"] { order: 3; flex: 1 1 100%; }
+  #dados-salas td[data-rotulo] { order: 4; }
+  #dados-salas td.dsgov-acoes .br-button { --button-size: var(--spacing-scale-6x); }
+  #dados-salas tr.tabela-sem-resultado td { flex: 1 1 100%; }
+}
+
+/* Textos dos termos: a barra do Salvar fica presa ao pé da janela enquanto se rola o formulário longo. */
+#salvar-textos { position: sticky; bottom: 0; z-index: 2; }
+
+/* Ajuda: o sumário "Nesta página" fica na coluna da direita e acompanha a rolagem a partir de 992px, logo abaixo do
+   cabeçalho fixo do DS (compacto: ~72px); a seção aberta pelo sumário também para abaixo dele. */
+@media (min-width: 992px) {
+  #sumario-ajuda { position: sticky; top: calc(var(--spacing-scale-9x) + var(--spacing-scale-2x)); }
+}
+section.br-card[id][aria-labelledby] { scroll-margin-top: calc(var(--spacing-scale-9x) + var(--spacing-scale-2x)); }
+
+/* Sala do inventário (inventario_sala.html + static/js/sala.js). Ganchos por id e data-papel, sem classe própria.
+   Faixa de leitura presa no topo, logo abaixo do cabeçalho fixo do DS (o sala.js mede o cabeçalho e grava
+   --sala-topo, porque ele encolhe ao rolar); barra do lote presa embaixo enquanto há bens marcados. */
+#faixa-leitura { position: sticky; top: var(--sala-topo, 0px); z-index: var(--z-index-layer-1); }
+#barra-lote { position: sticky; bottom: 0; z-index: var(--z-index-layer-1); box-shadow: var(--surface-shadow-md); }
+#leitor-camera { max-width: 480px; }
+#dados-sobras img { width: 56px; height: 56px; object-fit: cover; border-radius: var(--surface-rounder-sm); }
+/* Item do bem: clicável (abre a ficha); Lista com um traço entre os itens; avatar com a foto recortada. */
+[data-bem] { cursor: pointer; }
+[data-papel="caixa-lista"] .br-item { padding: var(--spacing-scale-base) var(--spacing-scale-2x); }
+[data-papel="caixa-lista"] .br-item + .br-item { border-top: var(--surface-width-sm) solid var(--border-color); }
+[data-bem] .br-avatar img { object-fit: cover; }
+[data-bem] [data-papel="selos"] .br-tag, [data-bem] [data-papel="encontrado"] { margin: 0 var(--spacing-scale-half) var(--spacing-scale-half) 0; }
+/* Menu ⋮ do bem: o Dropdown do core põe a lista em position:absolute à esquerda do botão; aqui ela abre para a
+   esquerda (não sai da tela no celular) e fica acima dos quadros vizinhos. */
+[data-papel="acoes-bem"] { position: relative; }
+[data-papel="acoes-bem"] [data-papel="menu-bem"] { left: auto; right: 0; min-width: 260px; z-index: var(--z-index-layer-2); cursor: default; }
+[data-papel="menu-bem"] .br-item { display: block; width: 100%; text-align: left; white-space: nowrap; padding: var(--spacing-scale-baseh) var(--spacing-scale-2x); }
+/* Galeria da ficha do bem: miniaturas quadradas. */
+#det-fotos img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+/* Abas da sala no celular: as três (Pendentes, Divergentes, Localizados) cabem em 390px sem rolar a barra — rótulo
+   no tamanho base e menos respiro lateral; no lugar da etiqueta "verificar" fica a bolinha de status (sala.js
+   mostra/esconde o invólucro [data-papel="alerta-divergentes"]). Botões Lista/Quadros só com ícone (abaixo do md do DS,
+   992px), estreitos. */
+@media (max-width: 575.98px) {
+  #contadores { --tab-padding: var(--spacing-scale-base); }
+  #contadores .tab-item button { font-size: var(--font-size-scale-base); }
+  #contadores .results { margin-top: var(--spacing-scale-base); }
+  #contadores[data-counter="true"] .tab-nav ul { margin-bottom: calc(var(--spacing-scale-base) * 2 + var(--font-size-scale-base)); }
+}
+@media (max-width: 991.98px) {
+  [data-visao].br-button { padding-left: var(--spacing-scale-baseh); padding-right: var(--spacing-scale-baseh); }
+}

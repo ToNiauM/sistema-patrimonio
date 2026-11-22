@@ -1,0 +1,118 @@
+site_name: Manual Operacional do Patrimônio
+site_description: Portal de orientação passo a passo para as rotinas do Setor de Patrimônio do Conselho Federal de Contabilidade — SEI, SBP e SGA em linguagem direta.
+site_url: https://toniaum.github.io/sistema-patrimonio/
+copyright: Conselho Federal de Contabilidade · Manual Operacional do Patrimônio
+docs_dir: docs
+
+theme:
+  name: material
+  language: pt-BR
+  logo: assets/logo-cfc.png
+  favicon: assets/logo-cfc.png
+  # Sem "media": o modo claro é o padrão na primeira visita (como no portal Astro);
+  # o escuro continua disponível no seletor e fica salvo no navegador.
+  palette:
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Modo escuro
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Modo claro
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+# Os procedimentos têm "status" no frontmatter (complete/partial/review); o Material
+# mostra esse status como ícone no menu lateral, com o rótulo abaixo como dica.
+extra:
+  status:
+    complete: Completo
+    partial: Parcial
+    review: Em revisão
+
+plugins:
+  - search:
+      lang: pt
+
+extra_css:
+  - css/manual.css
+extra_javascript:
+  - js/checklist.js
+  - js/zoom.js
+
+# O --strict só barra a publicação no que vem como aviso: por isso tudo aqui é warn.
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+  links:
+    not_found: warn
+    anchors: warn
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.tasklist:
+      custom_checkbox: true
+      clickable_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+nav:
+  - Início:
+      - Apresentação: index.md
+      - Como usar este manual: como-usar-este-manual.md
+  - Entrada de Bens:
+      - Visão geral: entrada/index.md
+      - Incorporar bem ao patrimônio: entrada/incorporar-bem/index.md
+  - Movimentação e Transferência:
+      - Visão geral: movimentacao-transferencia/index.md
+      - Movimentação e transferência de bens patrimoniais: movimentacao-transferencia/movimentar-transferir-bem/index.md
+  - Termos e Relatórios:
+      - Visão geral: termos-relatorios/index.md
+      - Emissão de termo de responsabilidade: termos-relatorios/termos-responsabilidade/index.md
+  - Processos no SEI:
+      - Visão geral: processos-sei/index.md
+  - Depreciação:
+      - Visão geral: depreciacao/index.md
+      - Depreciação e exportação para contabilidade: depreciacao/depreciacao-exportacao/index.md
+  - Inventário:
+      - Visão geral: inventario/index.md
+  - Desfazimento e Baixa:
+      - Visão geral: desfazimento-baixa/index.md
+  - Sistema de Patrimônio e Inventário:
+      - Visão geral: sistema/index.md
+      - Entrar e a sua conta: sistema/entrar.md
+      - Navegação, pesquisa e ajuda: sistema/navegacao.md
+      - Consultar bens e Análise: sistema/pesquisa-analise.md
+      - Termos de Responsabilidade e Devolução: sistema/termos.md
+      - Cadastros: sistema/cadastros.md
+      - Textos e Atualizar base: sistema/textos-atualizar-base.md
+      - "Inventário: guia rápido da comissão": sistema/inventario-comissao.md
+      - "Inventário: conferência nas salas": sistema/inventario-conferencia.md
+      - "Inventário: acompanhamento": sistema/inventario-acompanhamento.md
+      - Administração: sistema/administracao.md
+      - Glossário: sistema/glossario.md
+  - Referência:
+      - Manual do CFC: referencia/manual-cfc.md
+      - Mapa manual → procedimentos: referencia/mapa-manual-cfc.md
+      - Procedimento modelo: procedimento-modelo/index.md

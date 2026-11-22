@@ -1,0 +1,148 @@
+{# Componentes repetidos no protótipo Tabler; equivalentes aos de _macros.html #}
+
+{% macro mensagens() %}
+<div id="mensagens">
+{% for categoria, texto in get_flashed_messages(with_categories=true) %}
+  {% set tipo, icone = {'error': ('danger', 'fa-times-circle'), 'warning': ('warning', 'fa-exclamation-triangle'), 'success': ('success', 'fa-check-circle')}.get(categoria, ('info', 'fa-info-circle')) %}
+  <div class="alert alert-{{ tipo }} alert-dismissible" role="alert">
+    <div class="d-flex"><i class="fas {{ icone }} me-2 mt-1" aria-hidden="true"></i><div>{{ texto }}</div></div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar a mensagem"></button>
+  </div>
+{% endfor %}
+</div>
+{% endmacro %}
+
+{% macro select(nome, rotulo, opcoes, selecionado=None, obrigatorio=True, erro=None) %}
+<label class="form-label{% if obrigatorio %} required{% endif %}" for="campo-{{ nome }}">{{ rotulo }}</label>
+<select class="form-select{% if erro %} is-invalid{% endif %}" id="campo-{{ nome }}" name="{{ nome }}"{% if obrigatorio %} required aria-required="true"{% endif %}{% if erro %} aria-invalid="true" aria-describedby="erro-{{ nome }}"{% endif %}>
+  {% if obrigatorio %}<option value="">Selecione</option>{% endif %}
+  {% for opcao in opcoes %}
+  {% set valor, texto = (opcao, opcao) if opcao is string else opcao %}
+  <option value="{{ valor }}"{% if valor == selecionado %} selected{% endif %}>{{ texto }}</option>
+  {% endfor %}
+</select>
+{% if erro %}<div class="invalid-feedback" id="erro-{{ nome }}" role="alert">{{ erro }}</div>{% endif %}
+{% endmacro %}
+
+{% macro titulo_pagina(titulo, ancora, pre=None) %}
+{# Cabeçalho padrão: pré-título, título com a ajuda colada à direita e, via {% call %}, botões de ação à direita #}
+<div class="page-header d-print-none mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col">
+      {% if pre %}<div class="page-pretitle">{{ pre }}</div>{% endif %}
+      <h1 class="page-title">{{ titulo }}{{ ajuda_titulo(ancora) }}</h1>
+    </div>
+    {% if caller %}<div class="col-12 col-md-auto ms-auto d-print-none"><div class="btn-list">{{ caller() }}</div></div>{% endif %}
+  </div>
+</div>
+{% endmacro %}
+
+{% macro ajuda_titulo(ancora) %}
+{% if ancora %}<a class="astra-ajuda" href="{{ url_for('ajuda') }}#{{ ancora }}" aria-label="Ajuda desta tela" title="Ajuda desta tela"><i class="fas fa-question-circle" aria-hidden="true"></i></a>{% endif %}
+{% endmacro %}
+
+{% macro cabecalho_tabela(titulo, id, selecao=False, servidor=False) %}
+{# abre card + tabela com busca local (e barra de seleção, se selecao); quem chama fecha com fechar_tabela().
+   data-tabela: colunas ordenáveis e com largura ajustável (static/js/tabelas.js). servidor=True quando a lista
+   veio cortada (só os N primeiros): a ordenação volta ao servidor pelos th_ordem. #}
+<div class="card mb-3" id="card-{{ id }}">
+  <div class="card-header flex-wrap gap-2">
+    <h2 class="card-title">{{ titulo }}</h2>
+    <div class="ms-auto astra-busca-tabela">
+      <div class="input-icon">
+        <span class="input-icon-addon"><i class="fas fa-search" aria-hidden="true"></i></span>
+        <input class="form-control" id="campo-busca-{{ id }}" type="search" placeholder="Buscar na tabela" aria-label="Buscar na tabela: {{ titulo }}" data-filtro-tabela="tabela-{{ id }}"/>
+      </div>
+    </div>
+  </div>
+  {% if selecao %}
+  <div class="card-body py-2 border-bottom text-secondary small" data-selecao-info="check-{{ id }}"><span class="count">0</span> <span class="text">item selecionado</span></div>
+  {% endif %}
+  <div class="table-responsive">
+  <table class="table table-vcenter card-table" id="tabela-{{ id }}" data-tabela{% if servidor %} data-tabela-ordem="servidor"{% endif %}>
+    <caption class="visually-hidden">{{ titulo }}</caption>
+{% endmacro %}
+
+{% macro th_ordem(rotulo, campo, classe='') %}
+{# cabeçalho de tabela ordenada no servidor (cabecalho_tabela(..., servidor=True)): tabelas.js troca ?ordem=campo&dir= #}
+<th scope="col"{% if classe %} class="{{ classe }}"{% endif %} data-ordem="{{ campo }}"{% if request.args.get('ordem') == campo %} aria-sort="{{ 'descending' if request.args.get('dir') == 'desc' else 'ascending' }}"{% endif %}>{{ rotulo }}</th>
+{% endmacro %}
+
+{% macro fechar_tabela() %}
+  </table>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro th_selecao(id) %}
+<th class="w-1" scope="col"><input class="form-check-input m-0 align-middle" id="check-all-{{ id }}" name="check-all-{{ id }}" type="checkbox" aria-label="Selecionar todas as linhas" data-parent="check-{{ id }}"/></th>
+{% endmacro %}
+
+{% macro td_selecao(id, indice, name, value, form=None) %}
+<td><input class="form-check-input m-0 align-middle" id="check-{{ id }}-{{ indice }}" name="{{ name }}" type="checkbox" value="{{ value }}" aria-label="Selecionar linha" data-child="check-{{ id }}"{% if form %} form="{{ form }}"{% endif %}/></td>
+{% endmacro %}
+
+{% macro tag_termo(s) %}
+{# s = dict de db.situacao_termo #}
+{% if s.estado == 'vigente' %}<span class="badge bg-green-lt text-nowrap">vigente</span>
+{% elif s.estado == 'desatualizado' %}<span class="badge bg-yellow-lt text-nowrap">desatualizado +{{ s.entraram }} −{{ s.sairam }}</span>
+{% else %}<span class="badge bg-secondary-lt text-nowrap">sem termo</span>{% endif %}
+{% endmacro %}
+
+{% macro tag_email(s) %}
+{# s = dict de db.situacao_termo; sinaliza o pedido de assinatura do último termo e leva ao registro #}
+{% if not s.ultimo %}—
+{% elif s.ultimo.email_enviado_em %}<a href="{{ url_for('termo_emitido_tela', id=s.ultimo.id) }}" class="badge bg-green-lt text-nowrap">enviado {{ s.ultimo.email_enviado_em[8:10] }}/{{ s.ultimo.email_enviado_em[5:7] }}</a>
+{% elif s.ultimo.documento_sei and s.ultimo.bloco_sei %}<a href="{{ url_for('termo_emitido_tela', id=s.ultimo.id) }}" class="badge bg-yellow-lt text-nowrap">não enviado</a>
+{% else %}<a href="{{ url_for('termo_emitido_tela', id=s.ultimo.id) }}" class="badge bg-secondary-lt text-nowrap">sem doc./bloco</a>{% endif %}
+{% endmacro %}
+
+{% macro grafico(g) %}
+{# g = {id, titulo, subtitulo, opcoes (dict ECharts), resumo (aria-label), alto (bool), altura, col, tabela (graficos.tabela_dados)}
+   Opcionais: destaque = {forte, texto} (frase curta acima do gráfico); seletores = [{rotulo, opcoes: [(valor, rótulo)]}] com
+   variantes = [{id, opcoes, resumo, tabela}] — o id de cada variante é g.id + "--" + valores dos seletores (graficos.js troca). #}
+{% set variantes = g.variantes or [g] %}
+<div class="{{ g.col or 'col-sm-12 col-md-6' }} mb-3">
+  <div class="card h-100">
+    <div class="card-header {% if g.seletores %}flex-wrap gap-2{% else %}d-block{% endif %}">
+      {% if g.seletores %}<div class="col-12 col-md">{% endif %}
+      <h3 class="card-title">{{ g.titulo }}</h3>
+      {% if g.subtitulo %}<div class="card-subtitle mt-1">{{ g.subtitulo }}</div>{% endif %}
+      {% if g.seletores %}</div>
+      <div class="col-12 col-md-auto d-flex flex-wrap gap-2">
+        {% for s in g.seletores %}
+        <select class="form-select form-select-sm w-auto" data-grafico-seletor="{{ g.id }}" aria-label="{{ s.rotulo }}" title="{{ s.rotulo }}" autocomplete="off">
+          {% for valor, rotulo in s.opcoes %}<option value="{{ valor }}"{% if loop.first %} selected{% endif %}>{{ rotulo }}</option>{% endfor %}
+        </select>
+        {% endfor %}
+      </div>{% endif %}
+    </div>
+    <div class="card-body">
+      {% if g.destaque %}<p class="mb-2"><strong>{{ g.destaque.forte }}</strong> {{ g.destaque.texto }}</p>{% endif %}
+      {% for v in variantes %}<script type="application/json" id="{{ v.id }}" data-resumo="{{ v.resumo }}">{{ v.opcoes|tojson }}</script>
+      {% endfor %}
+      <div class="{% if g.altura == 'extra' %}astra-grafico-extra{% elif g.alto %}astra-grafico-alto{% else %}astra-grafico{% endif %}" data-grafico="{{ variantes[0].id }}"{% if g.seletores %} data-grafico-base="{{ g.id }}"{% endif %} role="img" aria-label="{{ variantes[0].resumo }}"></div>
+      {% if variantes[0].tabela %}
+      <button class="btn btn-sm btn-ghost-secondary mt-2 collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#acc-{{ g.id }}-dados" aria-controls="acc-{{ g.id }}-dados" aria-expanded="false">
+        <i class="fas fa-angle-down me-1 astra-seta" aria-hidden="true"></i>Ver dados
+      </button>
+      <div class="collapse" id="acc-{{ g.id }}-dados">
+        {% for v in variantes %}
+        <div class="table-responsive mt-2"{% if g.seletores %} data-grafico-tabela="{{ v.id }}"{% if not loop.first %} hidden{% endif %}{% endif %}>
+          <table class="table table-sm table-vcenter" data-tabela>
+            <caption class="visually-hidden">{{ g.titulo }} — dados</caption>
+            <thead><tr>{% for c in v.tabela.colunas %}<th scope="col"{% if not loop.first %} class="text-end"{% endif %}>{{ c }}</th>{% endfor %}</tr></thead>
+            <tbody>
+            {% for linha in v.tabela.linhas %}
+            <tr>{% for cel in linha %}<td{% if not loop.first %} class="text-end astra-numero"{% endif %}>{% if cel.url %}<a href="{{ cel.url }}">{{ cel.valor }}</a>{% else %}{{ cel.valor }}{% endif %}</td>{% endfor %}</tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endmacro %}

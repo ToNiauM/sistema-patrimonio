@@ -1,0 +1,56 @@
+{#- Cabeçalho em uma linha (padrão DSGov, componentes/header.md § Cabeçalho em uma linha): ☰ + sistema à esquerda, busca no meio,
+    pílula do usuário à direita com Meus acessos, Trocar senha e Sair (POST com CSRF). Logo e órgão moram no menu e no rodapé. #}
+  <header class="br-header dsgov-cabecalho-linha mb-4"{% if not pode('pesquisa') %} data-no-search{% endif %} id="header" data-sticky="data-sticky">
+    <div class="container-lg">
+      <div class="header-top">
+        <div class="header-actions">
+          {% if pode('pesquisa') %}
+          <div class="header-search-trigger">
+            <button class="br-button circle" type="button" aria-label="Abrir pesquisa" data-toggle="search" data-target=".header-search"><i class="fas fa-search" aria-hidden="true"></i></button>
+          </div>
+          {% endif %}
+          <div class="header-login">
+            {% if USUARIO and USUARIO.id %}
+            {% set _nomes = (USUARIO.nome or '').split() %}
+            <div class="header-avatar">
+              <div class="avatar">
+                <button class="br-sign-in dsgov-usuario" type="button" id="avatar-dropdown-trigger" data-toggle="dropdown" data-target="avatar-menu" aria-label="Abrir menu do usuário" aria-haspopup="true">
+                  <span class="br-avatar small" title="{{ USUARIO.nome }}"><span class="content bg-pure-0 text-blue-warm-vivid-70">{{ ((_nomes[0][:1] if _nomes else '') ~ (_nomes[-1][:1] if _nomes|length > 1 else ''))|upper }}</span></span>
+                  <span class="ml-2 d-none d-sm-inline">{{ _nomes[0] if _nomes else USUARIO.login }}</span>
+                  <i class="fas fa-caret-down ml-1" aria-hidden="true"></i>
+                </button>
+                <div class="br-list" id="avatar-menu" hidden="hidden" role="menu" aria-labelledby="avatar-dropdown-trigger">
+                  <div class="header"><div class="title">{{ USUARIO.nome }}<span class="d-block text-down-01 text-weight-regular text-gray-70">{{ USUARIO.funcoes|map('rotulo_funcao')|join(', ') }}</span></div></div>
+                  <a class="br-item" href="{{ url_for('usuarios.acessos') }}" role="menuitem">Meus acessos</a>
+                  <a class="br-item" href="{{ url_for('usuarios.senha') }}" role="menuitem">Trocar senha</a>
+                  <form method="post" action="{{ url_for('usuarios.sair') }}">{{ csrf_campo() }}<button class="br-item" type="submit" role="menuitem">Sair</button></form>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="header-bottom">
+        <div class="header-menu">
+          <div class="header-menu-trigger" id="header-navigation">
+            <button class="br-button small circle" type="button" aria-label="Menu" data-toggle="menu" data-target="#main-navigation" id="navigation"><i class="fas fa-bars" aria-hidden="true"></i></button>
+          </div>
+          <div class="header-info">
+            <div class="header-title">{{ DSGOV.SISTEMA }}</div>
+            {% if DSGOV.SUBTITULO %}<div class="header-subtitle">{{ DSGOV.SUBTITULO }}</div>{% endif %}
+          </div>
+        </div>
+        {% if pode('pesquisa') %}
+        <form class="header-search" id="main-searchbox" tabindex="-1" method="get" action="{{ url_for('pesquisa') }}">
+          <div class="br-input has-icon">
+            <label for="pesquisa-q">Texto da pesquisa</label>
+            <input id="pesquisa-q" type="text" name="q" placeholder="Número, descrição, nome ou centro de custo" autocomplete="off" value="{{ q or '' }}"/>
+            <button class="br-button circle small" type="submit" aria-label="Pesquisar"><i class="fas fa-search" aria-hidden="true"></i></button>
+          </div>
+          <button class="br-button circle search-close ml-1" type="button" aria-label="Fechar pesquisa" data-dismiss="search"><i class="fas fa-times" aria-hidden="true"></i></button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </header>

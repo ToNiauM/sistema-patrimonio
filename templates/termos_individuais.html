@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from '_macros.html' import ajuda_titulo, pre_titulo %}
+{% from "_macros.html" import select, cabecalho_tabela, tag_termo, tag_email %}
+{% block titulo %}Termo individual{% endblock %}
+{% block conteudo %}
+{{ pre_titulo('Termos de Responsabilidade') }}
+<div class="d-flex align-items-center mb-4"><h1 class="mb-0">Termo individual</h1>{{ ajuda_titulo(AJUDA_ANCORA) }}</div>
+{% if pode('gerar_individual', 'POST') %}
+<form method="post" action="{{ url_for('gerar_individual') }}" class="col-md-8">{{ csrf_campo() }}
+  <div class="mb-3">{{ select('nome', 'Pessoa', nomes) }}</div>
+  <button class="br-button primary" type="submit"><i class="fas fa-file-alt mr-1" aria-hidden="true"></i>Gerar termo</button>
+</form>
+{% endif %}
+<div class="mt-5">
+{{ cabecalho_tabela('Situação dos termos individuais', 'pessoas') }}
+  <thead><tr><th scope="col">Pessoa</th><th scope="col" class="dsgov-numero">Bens</th><th scope="col" class="dsgov-numero">Valor</th><th scope="col">Último termo</th><th scope="col">Situação</th><th scope="col">E-mail</th><th scope="col" class="dsgov-acoes">Termo</th></tr></thead>
+  <tbody>
+  {% for p in pessoas %}
+  <tr>
+    <td>{{ p.nome }}</td><td class="dsgov-numero">{{ p.quantidade }}</td><td class="dsgov-numero">{{ (p.valor)|moeda }}</td>
+    <td>{% if p.ultimo %}{{ p.ultimo.emitido_em[8:10] }}/{{ p.ultimo.emitido_em[5:7] }}/{{ p.ultimo.emitido_em[:4] }}{% else %}—{% endif %}</td>
+    <td>{{ tag_termo(p) }}</td><td>{{ tag_email(p) }}</td>
+    <td class="dsgov-acoes"><a class="br-button circle small" href="{{ url_for('termo', tipo='individual', chave=p.nome) }}" aria-label="Termo de {{ p.nome }}"><i class="fas fa-file-alt" aria-hidden="true"></i></a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+</div>
+{% endblock %}

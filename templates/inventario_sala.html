@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% from '_macros.html' import ajuda_titulo, pre_titulo %}
+{% block titulo %}{{ localizacao }}{% endblock %}
+
+{#- Sala virtual na casca DSGov: o desenho de templates/tabler/inventario_sala.html com componentes do padrão DSGov.
+    Três seções (Pendentes, Divergentes, Localizados) num br-tab com contador; cada bem aparece duas vezes, na Lista
+    (br-list, compacta, sem foto) e nos Quadros (br-card com br-avatar); o botão Lista/Quadros escolhe qual se vê.
+    secao: pendente | localizado | divergente (onde o bem aparece). Os data-papel são os ganchos de static/js/sala.js. #}
+{% macro situacao_tag(b, secao) %}
+{% if secao == 'localizado' %}<span class="br-tag small bg-success" data-papel="situacao">Localizado</span>
+{% elif secao == 'divergente' and b.situacao != 'ATIVO' %}<span class="br-tag small bg-danger" data-papel="situacao" title="{{ b.situacao }}">Não ativo</span>
+{% elif secao == 'divergente' %}<span class="br-tag small bg-warning text-gray-80" data-papel="situacao">Divergente</span>
+{% else %}<span class="br-tag small bg-gray-20 text-gray-80" data-papel="situacao">Pendente</span>{% endif %}
+{% endmacro %}
+
+{% macro icone_categoria(classificacao) %}{% set c = (classificacao or '')|upper %}{% if 'MÓVE' in c %}fa-chair{% elif 'PROCESSAMENTO' in c or 'SOFTWARE' in c %}fa-desktop{% elif 'MÁQUINA' in c %}fa-tools{% elif 'COPA' in c or 'COZINHA' in c %}fa-utensils{% elif 'VEÍCULO' in c %}fa-car{% elif 'MUSEU' in c or 'ARTE' in c %}fa-palette{% else %}fa-box{% endif %}{% endmacro %}
+
+{% macro avatar_bem(b) %}
+{% set f = b.fotos[0] if b.fotos else None %}
+<span class="br-avatar" data-papel="avatar" title="{{ 'Foto do bem' if f else 'Bem sem foto' }}"><span class="content">{% if f and f.url.startswith(('http://', 'https://')) %}<img src="{{ f.url }}" alt="Foto {{ f.nfoto }} do bem {{ b.numero }}"/>{% else %}<i class="fas {{ icone_categoria(b.classificacao) }}" aria-hidden="true"></i>{% endif %}</span></span>
+{% endmacro %}
+
+{% macro data_curta(iso) %}{{ iso[8:10] }}/{{ iso[5:7] }}/{{ iso[:4] }} {{ iso[11:16] }}{% endmacro %}
+
+{# Peças comuns às duas visualizações #}
+{% macro numero_bem(b) %}{% if pode('bem') %}<a class="text-weight-bold" href="{{ url_for('bem', numero=b.numero) }}" data-papel="numero" title="Abrir o cadastro do bem {{ b.numero }}">{{ b.numero }}</a>{% else %}<span class="text-weight-bold" data-papel="numero">{{ b.numero }}</span>{% endif %}{% endmacro %}
+{% macro local_bem(b, secao) %}<span data-papel="local">{% if secao == 'divergente' %}Cadastrado em {{ b.localizacao or '—' }}{% if b.situacao != 'ATIVO' %} · {{ b.situacao }}{% endif %}{% else %}{{ b.localizacao }}{% endif %}</span>{% endmacro %}
+{% macro encontrado_bem(b, secao) %}{% if secao == 'pendente' and b.lido_em %}<span class="br-tag small bg-warning text-gray-80" data-papel="encontrado" title="Lido em outra sala: continua pendente aqui">Encontrado em {{ b.lido_em_sala }}</span>{% endif %}{% endmacro %}
+{% macro leitura_bem(b, secao) %}<span class="text-down-01 text-gray-70 mr-2{% if not b.lido_em %} d-none{% endif %}" data-papel="leitura"><i class="fas fa-barcode mr-1" aria-hidden="true"></i><span data-papel="leitura-texto">{% if b.lido_em %}{{ 'Lido aqui' if secao == 'divergente' else 'Lido' }} por {{ b.integrante }} em {{ data_curta(b.lido_em) }}{% endif %}</span></span>{% endmacro %}
+{% macro selos_bem(b) %}<span data-papel="selos">
+  {%- if b.conservacao %}<span class="br-tag small bg-blue-warm-vivid-70">{{ b.conservacao }}</span>{% endif %}
+  {%- if b.lido_em and not b.conservacao %}<span class="br-tag small bg-orange-vivid-10 text-orange-vivid-70">sem conservação</span>{% endif %}
+  {%- if b.lido_em and fotos_ativas and not b.fotos %}<span class="br-tag small bg-orange-vivid-10 text-orange-vivid-70">sem foto</span>{% endif %}
+  {%- if b.fotos|length > 1 %}<span class="br-tag small bg-gray-10 text-gray-80" title="Todas as fotos estão nos detalhes do bem">+{{ b.fotos|length - 1 }} foto(s)</span>{% endif -%}
+</span>{% endmacro %}
+{% macro selecao_bem(b, copia) %}<div class="br-checkbox hidden-label"><input id="sel-{{ copia }}-{{ b.numero }}" type="checkbox" value="{{ b.numero }}" data-papel="selecao" aria-label="Selecionar o bem {{ b.numero }}"/><label for="sel-{{ copia }}-{{ b.numero }}">Selecionar o bem {{ b.numero }}</label></div>{% endmacro %}
+{#- Menu ⋮ (br-list role=menu + data-toggle="dropdown"). data-dsgov-init: o sala.js instancia o Dropdown do core sem
+    trocar o ícone (o dsgov.js poria fa-chevron no lugar das reticências). "Nova foto" é um <label> do campo de
+    arquivo único da página (#foto-bem): toque no rótulo abre a câmera do celular sem depender de input.click(). #}
+{% macro acoes_bem(b, fechado, copia) %}
+<div data-papel="acoes-bem">
+  <button class="br-button circle small" type="button" data-toggle="dropdown" data-target="menu-{{ copia }}-{{ b.numero }}" data-dsgov-init="1" aria-label="Ações do bem {{ b.numero }}"><i class="fas fa-ellipsis-v" aria-hidden="true"></i></button>
+  <div class="br-list" id="menu-{{ copia }}-{{ b.numero }}" role="menu" data-papel="menu-bem" hidden>
+    <button class="br-item" type="button" role="menuitem" data-acao="detalhes"><i class="fas fa-list-ul mr-2" aria-hidden="true"></i>Detalhes</button>
+    {% if not fechado %}
+    <button class="br-item" type="button" role="menuitem" data-acao="ler"><i class="fas fa-check mr-2" aria-hidden="true"></i>Registrar leitura nesta sala</button>
+    <button class="br-item text-danger{% if not b.lido_em %} d-none{% endif %}" type="button" role="menuitem" data-acao="desfazer"><i class="fas fa-undo mr-2" aria-hidden="true"></i>Desfazer leitura</button>
+    {% if fotos_ativas %}<label class="br-item{% if not b.lido_em %} disabled{% endif %}" for="foto-bem" role="menuitem" tabindex="0" data-acao="foto" aria-label="Nova foto do bem {{ b.numero }}"{% if not b.lido_em %} aria-disabled="true"{% endif %}><i class="fas fa-camera mr-2" aria-hidden="true"></i>Nova foto</label>{% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}
+
+{% macro atributos(b, secao, copia) %}data-bem="{{ b.numero }}" data-copia="{{ copia }}" data-secao="{{ secao }}" data-ativo="{{ 'sim' if b.situacao == 'ATIVO' else 'nao' }}" data-icone="{{ icone_categoria(b.classificacao) }}"{% endmacro %}
+
+{# Lista: compacta, sem foto — seleção | número, descrição, situação / onde está, quem responde / leitura e selos | ações #}
+{% macro item_lista(b, secao, fechado) %}
+<div class="br-item py-2" role="listitem" {{ atributos(b, secao, 'lista') }}>
+  <div class="row align-items-center flex-nowrap">
+    {% if not fechado %}<div class="col-auto">{{ selecao_bem(b, 'lista') }}</div>{% endif %}
+    <div class="col text-truncate">
+      <div class="d-flex align-items-center">{{ numero_bem(b) }}<span class="flex-fill text-truncate ml-2 mr-2" data-papel="descricao">{{ b.descricao }}{% if b.complemento %} {{ b.complemento }}{% endif %}</span>{{ situacao_tag(b, secao) }}</div>
+      <div class="text-down-01 text-gray-70 text-truncate"><i class="fas fa-map-marker-alt mr-1" aria-hidden="true"></i>{{ local_bem(b, secao) }} · <i class="fas fa-user mr-1" aria-hidden="true"></i><span data-papel="responsavel">{{ b.pessoa or b.responsavel_centro or '—' }}</span></div>
+      <div class="d-flex flex-wrap align-items-center mt-1">{{ encontrado_bem(b, secao) }}{{ leitura_bem(b, secao) }}{{ selos_bem(b) }}</div>
+    </div>
+    <div class="col-auto">{{ acoes_bem(b, fechado, 'lista') }}</div>
+  </div>
+</div>
+{% endmacro %}
+
+{# Quadros: avatar (foto ou ícone da categoria) à esquerda, informações ao lado, seleção e ações à direita #}
+{% macro item_grade(b, secao, fechado) %}
+<div class="col-sm-6 col-lg-4 mb-3" {{ atributos(b, secao, 'grade') }}>
+  <div class="br-card mb-0"><div class="card-content">
+    <div class="row align-items-center flex-nowrap">
+      <div class="col-auto">{{ avatar_bem(b) }}</div>
+      <div class="col text-truncate">
+        <div class="d-flex align-items-center justify-content-between">{{ numero_bem(b) }}{{ situacao_tag(b, secao) }}</div>
+        <div class="text-weight-semi-bold text-truncate" data-papel="descricao">{{ b.descricao }}{% if b.complemento %} {{ b.complemento }}{% endif %}</div>
+        <div class="text-down-01 text-gray-70 text-truncate"><i class="fas fa-map-marker-alt mr-1" aria-hidden="true"></i>{{ local_bem(b, secao) }}</div>
+        {% if secao == 'pendente' and b.lido_em %}<div class="text-truncate">{{ encontrado_bem(b, secao) }}</div>{% endif %}
+        <div class="text-truncate">{{ leitura_bem(b, secao) }}</div>
+        <div class="text-down-01 text-gray-70 text-truncate"><i class="fas fa-user mr-1" aria-hidden="true"></i><span data-papel="responsavel">{{ b.pessoa or b.responsavel_centro or '—' }}</span></div>
+        <div class="text-down-01 text-gray-70 text-truncate"><i class="fas fa-calendar-alt mr-1" aria-hidden="true"></i><span data-papel="entrada">{{ b.data_entrada or '—' }} · {{ b.valor_atual|moeda if b.valor_atual is not none else 'valor não informado' }}</span></div>
+        <div class="d-flex flex-wrap mt-1">{{ selos_bem(b) }}</div>
+      </div>
+      <div class="col-auto"><div class="d-flex flex-column align-items-center">{% if not fechado %}<div class="mb-2">{{ selecao_bem(b, 'grade') }}</div>{% endif %}{{ acoes_bem(b, fechado, 'grade') }}</div></div>
+    </div>
+  </div></div>
+</div>
+{% endmacro %}
+
+{# Uma seção nas duas visualizações. Sem JS: lista no celular e quadros a partir de md. #}
+{% macro secao_bens(nome, itens, secao, fechado) %}
+<div class="d-md-none" data-papel="caixa-lista"{% if not itens %} hidden{% endif %}>
+  <div class="br-card mb-3"><div class="br-list" role="list" id="lista-{{ nome }}" data-sub="true">
+    {% for b in itens %}{{ item_lista(b, secao, fechado) }}{% endfor %}
+  </div></div>
+</div>
+<div class="row d-none d-md-flex" id="grade-{{ nome }}" data-papel="caixa-grade">
+  {% for b in itens %}{{ item_grade(b, secao, fechado) }}{% endfor %}
+</div>
+{% endmacro %}
+
+{% macro vazio(titulo, texto, icone, mostrar) %}
+<div class="br-message info{% if not mostrar %} d-none{% endif %}" data-papel="vazio"><div class="icon"><i class="fas {{ icone }} fa-lg" aria-hidden="true"></i></div>
+  <div class="content"><span class="message-title">{{ titulo }}</span><span class="message-body"> {{ texto }}</span></div></div>
+{% endmacro %}
+
+{# Aba do br-tab com contador (data-counter); "verificar" aparece em Divergentes quando há algum #}
+{% macro aba(nome, rotulo, numero, icone, ativa) %}
+<li class="tab-item{% if ativa %} active{% endif %}" title="{{ rotulo }}" role="presentation">
+  <button type="button" role="tab" id="aba-{{ nome }}" data-panel="secao-{{ nome }}" aria-controls="secao-{{ nome }}" aria-selected="{{ 'true' if ativa else 'false' }}" data-aba="{{ nome }}"><span class="name"><i class="fas {{ icone }} mr-1 d-none d-sm-inline" aria-hidden="true"></i>{{ rotulo }}{% if nome == 'divergentes' %}<span class="ml-1{% if not numero %} d-none{% endif %}" data-papel="alerta-divergentes"><span class="br-tag small bg-warning text-gray-80 d-none d-sm-inline-flex">verificar</span><span class="br-tag status bg-warning d-sm-none" title="verificar"></span></span>{% endif %}</span></button>
+  <span class="results">(<span id="n-{{ nome }}">{{ numero }}</span>)</span>
+</li>
+{% endmacro %}
+
+{% block conteudo %}
+{% set fechado = e.estado != 'aberto' or not na_comissao %}
+{% set pendentes = bens|rejectattr('situacao_inv', 'equalto', 'localizado')|list %}
+{% set localizados = bens|selectattr('situacao_inv', 'equalto', 'localizado')|list %}
+{{ pre_titulo('Inventário · sala') }}
+<div class="d-flex align-items-center"><h1 class="mb-0">{{ localizacao }}</h1>{{ ajuda_titulo(AJUDA_ANCORA) }}</div>
+<p class="text-gray-70 mb-3">{{ e.nome }}{% if sala.ccustos %} · centro {{ sala.ccustos }}{% endif %} ·
+  {% if na_comissao %}lendo como <strong>{{ integrante }}</strong>{% else %}<strong>Você não faz parte da comissão deste evento</strong>{% endif %}
+  (<a href="{{ url_for('inventario.evento_tela', id=e.id) }}">evento</a>)</p>
+{% if e.encerrado_em %}
+<div class="br-message warning mb-3"><div class="icon"><i class="fas fa-lock fa-lg" aria-hidden="true"></i></div><div class="content"><span class="message-body">Evento encerrado: somente consulta.</span></div></div>
+{% elif e.estado == 'fechado' %}
+<div class="br-message warning mb-3"><div class="icon"><i class="fas fa-pause-circle fa-lg" aria-hidden="true"></i></div>
+  <div class="content"><span class="message-title">Inventário fechado.</span><span class="message-body"> A leitura está suspensa até o administrador reabrir; consulta liberada.</span></div></div>
+{% elif fechado %}
+<div class="br-message info mb-3"><div class="icon"><i class="fas fa-eye fa-lg" aria-hidden="true"></i></div><div class="content"><span class="message-body">Somente consulta: seu usuário não confere bens neste evento.</span></div></div>
+{% endif %}
+{% if not fotos_ativas %}
+<div class="br-message info mb-3"><div class="icon"><i class="fas fa-camera fa-lg" aria-hidden="true"></i></div><div class="content"><span class="message-body">Fotos desativadas: bucket não configurado. Leituras e sobras funcionam sem foto.</span></div></div>
+{% endif %}
+
+{# Faixa de leitura: presa no topo enquanto a lista rola (position: sticky em patrimonio.css, #faixa-leitura) #}
+<div class="br-card mb-3" id="faixa-leitura"><div class="card-content">
+  <div class="d-flex align-items-center justify-content-between mb-1">
+    <label class="text-weight-semi-bold mb-0" for="leitura">Plaqueta</label>
+    <div title="pendentes · divergentes · localizados de {{ sala.total }}">
+      <span class="br-tag small bg-gray-20 text-gray-80" title="pendentes"><i class="fas fa-clock" aria-hidden="true"></i><span data-contador="pendentes">{{ sala.pendentes }}</span></span>
+      <span class="br-tag small bg-warning text-gray-80" title="divergentes"><i class="fas fa-exchange-alt" aria-hidden="true"></i><span data-contador="divergentes">{{ sala.divergentes }}</span></span>
+      <span class="br-tag small bg-success" title="localizados"><i class="fas fa-check" aria-hidden="true"></i><span data-contador="localizados">{{ sala.localizados }}</span></span>
+    </div>
+  </div>
+  <div class="d-flex align-items-center">
+    <div class="br-input large flex-fill mr-2">
+      <input id="leitura" type="text" inputmode="none" autocomplete="off" enterkeyhint="done" placeholder="Aproxime o leitor…"{% if fechado or not na_comissao %} disabled{% endif %} autofocus/>
+    </div>
+    <button class="br-button circle secondary mr-1" type="button" id="btn-camera" aria-label="Ler com a câmera" title="Câmera"{% if fechado or not na_comissao %} disabled{% endif %}><i class="fas fa-camera" aria-hidden="true"></i></button>
+    <button class="br-button circle" type="button" id="btn-digitar" aria-label="Digitar o número" title="Digitar"{% if fechado or not na_comissao %} disabled{% endif %}><i class="fas fa-keyboard" aria-hidden="true"></i></button>
+  </div>
+  <div id="aviso" class="br-message mt-2 mb-0 d-none"><div class="icon"><i class="fas fa-info-circle fa-lg" aria-hidden="true"></i></div><div class="content" role="alert"><span class="message-body" id="aviso-texto"></span>
+    <button class="br-button small secondary ml-2 d-none" type="button" id="btn-sobra">Registrar sobra</button></div></div>
+  <div id="camera" class="mt-2" hidden><div id="leitor-camera"></div><button class="br-button small mt-2" type="button" id="btn-fechar-camera"><i class="fas fa-times mr-1" aria-hidden="true"></i>Fechar câmera</button></div>
+</div></div>
+
+{# Seções da sala: Pendentes (padrão), Divergentes e Localizados; os números mudam a cada leitura #}
+<div class="br-tab" data-counter="true" id="contadores" data-total="{{ sala.total }}">
+  <nav class="tab-nav" aria-label="Seções da sala">
+    <ul role="tablist">
+      {{ aba('pendentes', 'Pendentes', sala.pendentes, 'fa-clock', true) }}
+      {{ aba('divergentes', 'Divergentes', sala.divergentes, 'fa-exchange-alt', false) }}
+      {{ aba('localizados', 'Localizados', sala.localizados, 'fa-check', false) }}
+    </ul>
+  </nav>
+
+  {# Busca, "Todos" e Lista/Quadros (valem para a seção visível) #}
+  <div class="d-flex align-items-center mt-3 mb-1">
+    {% if not fechado %}<div class="br-checkbox mr-3"><input id="selecionar-todos" type="checkbox" aria-label="Selecionar todos os bens visíveis da seção"/><label for="selecionar-todos">Todos</label></div>{% endif %}
+    <div class="br-input input-button flex-fill mr-2">
+      <input id="busca-bens" type="search" placeholder="Buscar bens da sala" aria-label="Buscar bens da sala" autocomplete="off"/>
+      <button class="br-button" type="button" aria-label="Buscar" tabindex="-1"><i class="fas fa-search" aria-hidden="true"></i></button>
+    </div>
+    <div class="d-flex flex-nowrap" role="group" aria-label="Visualização dos bens">
+      <button class="br-button small" type="button" data-visao="lista" aria-pressed="false" aria-label="Ver em lista" title="Lista"><i class="fas fa-list" aria-hidden="true"></i><span class="d-none d-md-inline ml-1">Lista</span></button>
+      <button class="br-button small" type="button" data-visao="quadros" aria-pressed="false" aria-label="Ver em quadros" title="Quadros"><i class="fas fa-th-large" aria-hidden="true"></i><span class="d-none d-md-inline ml-1">Quadros</span></button>
+    </div>
+  </div>
+  <p class="text-down-01 text-gray-70 mb-2" id="busca-contagem" aria-live="polite"></p>
+
+  <div class="tab-content">
+    <div class="tab-panel active" id="secao-pendentes" role="tabpanel" aria-labelledby="aba-pendentes" data-secao-painel="pendentes">
+      <p class="text-down-01 text-gray-70 mb-2">Bens cadastrados nesta sala que ainda não foram lidos aqui. Os encontrados em outra sala continuam pendentes e mostram onde foram lidos.</p>
+      {{ secao_bens('pendentes', pendentes, 'pendente', fechado) }}
+      {% if sala.total %}{{ vazio('Nenhum bem pendente.', 'Todos os bens cadastrados nesta sala foram lidos aqui.', 'fa-check-circle', not pendentes) }}
+      {% else %}{{ vazio('Nenhum bem ativo cadastrado nesta sala.', 'Bens lidos aqui e cadastrados em outra sala aparecem em Divergentes.', 'fa-box-open', true) }}{% endif %}
+    </div>
+    <div class="tab-panel" id="secao-divergentes" role="tabpanel" aria-labelledby="aba-divergentes" data-secao-painel="divergentes">
+      <p class="text-down-01 text-gray-70 mb-2">Bens lidos nesta sala mas cadastrados em outra (ou não ativos). A localização cadastrada não muda com a leitura.</p>
+      {{ secao_bens('divergentes', trazidos, 'divergente', fechado) }}
+      {{ vazio('Nenhum bem divergente.', 'Nenhum bem de outra sala foi lido aqui.', 'fa-exchange-alt', not trazidos) }}
+    </div>
+    <div class="tab-panel" id="secao-localizados" role="tabpanel" aria-labelledby="aba-localizados" data-secao-painel="localizados">
+      <p class="text-down-01 text-gray-70 mb-2">Bens cadastrados nesta sala e lidos aqui neste inventário.</p>
+      {{ secao_bens('localizados', localizados, 'localizado', fechado) }}
+      {{ vazio('Nenhum bem localizado ainda.', 'Leia a plaqueta de um bem para ele aparecer aqui.', 'fa-barcode', not localizados) }}
+    </div>
+  </div>
+</div>
+
+{# Modelos para um bem de outra sala lido agora (vai para Divergentes); __N__ vira o número #}
+{% set modelo = {'numero': '__N__', 'descricao': '', 'complemento': None, 'classificacao': None, 'localizacao': '', 'situacao': 'ATIVO',
+                 'lido_em': '0000-00-00 00:00:00', 'lido_em_sala': '', 'integrante': '', 'pessoa': None, 'responsavel_centro': None,
+                 'data_entrada': None, 'valor_atual': None, 'fotos': [], 'conservacao': None} %}
+<template id="modelo-lista">{{ item_lista(modelo, 'divergente', fechado) }}</template>
+<template id="modelo-grade">{{ item_grade(modelo, 'divergente', fechado) }}</template>
+<script type="application/json" id="fichas">{{ fichas|tojson }}</script>
+<script type="application/json" id="sala-config">{{ {
+  'url_ler': url_for('inventario.ler', id=e.id, localizacao=localizacao),
+  'url_leitura': url_for('inventario.atualizar_leitura', id=e.id, numero=0),
+  'url_foto_excluir': url_for('inventario.foto_excluir', id=e.id, numero=0, nfoto=0),
+  'fotos_ativas': fotos_ativas, 'fechado': fechado, 'pode_bem': pode('bem')}|tojson }}</script>
+
+{# Ações em lote: aparece presa embaixo (sticky, #barra-lote) só quando há bens marcados #}
+{% if not fechado %}
+<div class="br-card mb-3 d-none" id="barra-lote">
+  <form method="post" action="{{ url_for('inventario.lote', id=e.id, localizacao=localizacao) }}" id="form-lote" class="card-content d-flex align-items-center flex-wrap">{{ csrf_campo() }}
+    <span class="text-down-01 text-gray-70 text-nowrap mr-2"><span id="n-selecionados">0</span> selecionado(s)</span>
+    <span class="text-down-01 text-gray-70 d-none d-md-inline mr-2">plaqueta ilegível ou ausente: marque e use os botões</span>
+    <span class="ml-auto"></span>
+    <button class="br-button secondary small mr-2" type="submit" name="acao" value="marcar"{% if not na_comissao %} disabled{% endif %}><i class="fas fa-check-double mr-1" aria-hidden="true"></i>Localizados</button>
+    <button class="br-button small" type="submit" name="acao" value="desmarcar"{% if not na_comissao %} disabled{% endif %}><i class="fas fa-undo mr-1" aria-hidden="true"></i>Desmarcar</button>
+  </form>
+</div>
+{% endif %}
+{% if fotos_ativas and not fechado %}
+{# Campo de arquivo único das fotos de bem: o "Nova foto" do menu e o "Adicionar foto" da ficha são rótulos dele #}
+<div class="br-input d-none"><label for="foto-bem">Nova foto do bem</label><input id="foto-bem" type="file" accept="image/*" capture="environment"/></div>
+{% endif %}
+
+{# Ficha do bem: cadastro, leitura neste inventário (conservação, quem usa e observação salvam ao mudar) e as fotos #}
+<div class="br-scrim-util foco" id="scrim-bem" data-scrim="true" hidden>
+  <div class="br-modal dsgov-modal-largo" role="dialog" aria-modal="true" aria-labelledby="modal-bem-titulo">
+    <div class="br-modal-header">
+      <div class="modal-title" id="modal-bem-titulo"><a href="#" id="det-link" title="Abrir o cadastro do bem">Bem</a> · <span id="det-titulo"></span> <span class="br-tag small" id="det-situacao"></span></div>
+      <button class="br-button close circle" type="button" id="det-fechar" aria-label="Fechar"><i class="fas fa-times" aria-hidden="true"></i></button>
+    </div>
+    <div class="br-modal-body">
+      <div class="br-message danger d-none" id="det-erro"><div class="icon"><i class="fas fa-times-circle fa-lg" aria-hidden="true"></i></div><div class="content" role="alert"><span class="message-body" id="det-erro-texto"></span></div></div>
+      <h2 class="text-up-01 mt-0 mb-2">Cadastro</h2>
+      <dl class="dsgov-detalhe row mb-0">
+        <div class="col-6 col-md-4"><dt>Descrição</dt><dd data-ficha="descricao"></dd></div>
+        <div class="col-6 col-md-4"><dt>Complemento</dt><dd data-ficha="complemento"></dd></div>
+        <div class="col-6 col-md-4"><dt>Classificação</dt><dd data-ficha="classificacao"></dd></div>
+        <div class="col-6 col-md-4"><dt>Situação</dt><dd data-ficha="situacao"></dd></div>
+        <div class="col-6 col-md-4"><dt>Localização</dt><dd data-ficha="localizacao"></dd></div>
+        <div class="col-6 col-md-4"><dt>Data de entrada</dt><dd data-ficha="data_entrada"></dd></div>
+        <div class="col-6 col-md-4"><dt>Valor de compra</dt><dd data-ficha="valor_compra"></dd></div>
+        <div class="col-6 col-md-4"><dt>Valor atual</dt><dd data-ficha="valor_atual"></dd></div>
+        <div class="col-6 col-md-4"><dt>Centro de custo</dt><dd id="det-centro"></dd></div>
+        <div class="col-6 col-md-4"><dt>Responsável individual</dt><dd id="det-pessoa"></dd></div>
+      </dl>
+      <span class="br-divider my-3"></span>
+      <h2 class="text-up-01 mt-0 mb-2">Leitura neste inventário</h2>
+      <p class="text-gray-70 d-none" id="modal-bem-aviso">Ainda não lido neste inventário. Registre a leitura para preencher estes campos e fotografar.</p>
+      <dl class="dsgov-detalhe row mb-0">
+        <div class="col-6 col-md-4"><dt>Sala da leitura</dt><dd data-ficha="lido_em_sala"></dd></div>
+        <div class="col-6 col-md-4"><dt>Lido por</dt><dd data-ficha="integrante"></dd></div>
+        <div class="col-6 col-md-4"><dt>Data/hora da leitura</dt><dd data-ficha="lido_em"></dd></div>
+      </dl>
+      <p class="label mb-1">Conservação</p>
+      <div class="mb-3" role="radiogroup" aria-label="Conservação">
+        <div class="d-inline-block mr-4 mb-1"><div class="br-radio"><input id="det-conservacao-0" name="det-conservacao" type="radio" value="" data-campo="conservacao"/><label for="det-conservacao-0">Não informada</label></div></div>
+        {% for c in conservacao %}<div class="d-inline-block mr-4 mb-1"><div class="br-radio"><input id="det-conservacao-{{ loop.index }}" name="det-conservacao" type="radio" value="{{ c }}" data-campo="conservacao"/><label for="det-conservacao-{{ loop.index }}">{{ c }}</label></div></div>{% endfor %}
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3"><div class="br-input"><label for="det-quem-usa">Quem usa</label><input id="det-quem-usa" type="text" data-campo="quem_usa" autocomplete="off"/></div></div>
+        <div class="col-md-6 mb-3"><div class="br-input"><label for="det-observacao">Observação</label><input id="det-observacao" type="text" data-campo="observacao" autocomplete="off"/></div></div>
+      </div>
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h2 class="text-up-01 mt-0 mb-0">Fotos <span class="br-tag small bg-gray-10 text-gray-80 ml-1" id="det-n-fotos">0</span></h2>
+        {% if fotos_ativas and not fechado %}<label class="br-button secondary small mb-0" for="foto-bem" id="det-nova-foto" data-acao="foto"><i class="fas fa-camera mr-1" aria-hidden="true"></i>Adicionar foto</label>{% endif %}
+      </div>
+      <div class="row" id="det-fotos"></div>
+      <p class="text-gray-70 mb-0" id="det-sem-fotos">Nenhuma foto deste bem neste inventário.</p>
+    </div>
+    <div class="br-modal-footer justify-content-end">
+      {% if not fechado %}
+      <button class="br-button secondary mr-auto d-none" type="button" id="det-desfazer"><i class="fas fa-undo mr-1" aria-hidden="true"></i>Desfazer leitura</button>
+      <button class="br-button secondary mr-2" type="button" id="det-ler"><i class="fas fa-check mr-1" aria-hidden="true"></i>Registrar leitura nesta sala</button>
+      {% endif %}
+      <button class="br-button secondary" type="button" id="det-concluir">Concluir</button>
+    </div>
+  </div>
+</div>
+
+<h2 class="text-up-01 mt-4 mb-2">Sobras (bens sem cadastro)</h2>
+{% if sobras %}
+<div class="br-table"><div class="table-header"></div><table id="dados-sobras" data-tabela><thead><tr><th scope="col">Descrição</th><th scope="col">Observação</th><th scope="col">Foto</th><th scope="col">Por</th>{% if not fechado %}<th scope="col" class="dsgov-acoes">Ações</th>{% endif %}</tr></thead><tbody>
+{% for s in sobras %}<tr><td>{{ s.descricao }}{% if s.complemento %} <span class="text-gray-70">{{ s.complemento }}</span>{% endif %}</td><td>{{ s.observacao }}</td>
+  <td>{% if s.foto_url and s.foto_url.startswith(('http://', 'https://')) %}<a href="{{ s.foto_url }}" target="_blank" rel="noopener"><img src="{{ s.foto_url }}" alt="Foto da sobra"/></a>{% else %}—{% endif %}</td><td>{{ s.integrante }}</td>
+  {% if not fechado %}<td class="dsgov-acoes"><form method="post" action="{{ url_for('inventario.sobra_excluir', id=e.id, sobra_id=s.id) }}">{{ csrf_campo() }}<button class="br-button circle small" type="submit" aria-label="Excluir sobra"><i class="fas fa-trash" aria-hidden="true"></i></button></form></td>{% endif %}</tr>{% endfor %}
+</tbody></table></div>
+{% else %}<p class="text-gray-70">Nenhuma sobra nesta sala.</p>{% endif %}
+{% if not fechado %}
+<div class="br-card mt-3" id="card-sobra" hidden><form method="post" action="{{ url_for('inventario.sobra', id=e.id, localizacao=localizacao) }}" enctype="multipart/form-data" id="form-sobra">{{ csrf_campo() }}<div class="card-content">
+  <div class="text-weight-semi-bold text-up-01 mb-2">Registrar sobra</div>
+  <div class="row">
+    <div class="col-md-4 mb-2"><div class="br-input"><label for="s-descricao">Descrição</label><input id="s-descricao" name="descricao" type="text" required/></div></div>
+    <div class="col-md-4 mb-2"><div class="br-input"><label for="s-complemento">Complemento</label><input id="s-complemento" name="complemento" type="text"/></div></div>
+    <div class="col-md-4 mb-2"><div class="br-input"><label for="s-observacao">Observação (obrigatória)</label><input id="s-observacao" name="observacao" type="text" required/></div></div>
+    {#- O <p class="text-base"> logo depois do br-upload é o do HTML canônico (upload.md) e não é enfeite: o BRUpload do
+        core compara o irmão seguinte do componente com document.querySelector(".text-base"); sem ele os dois são null,
+        a comparação dá verdadeiro e o core faz null.style ao anexar a foto (TypeError no console). #}
+    {% if fotos_ativas %}<div class="col-md-6 mb-2"><div class="br-upload"><label class="upload-label" for="s-foto"><span>Foto (obrigatória)</span></label><input class="upload-input" id="s-foto" name="foto" type="file" accept="image/*" capture="environment" required/><div class="upload-list"></div></div>
+      <p class="text-base mt-1">Tire a foto da sobra ou escolha uma imagem.</p></div>{% endif %}
+  </div>
+  <button class="br-button primary" type="submit">Registrar sobra</button>
+  <button class="br-button ml-2" type="button" id="btn-cancelar-sobra">Cancelar</button>
+</div></form></div>
+{% endif %}
+
+<div class="mt-4">
+  <a class="br-button" href="{{ url_for('inventario.evento_tela', id=e.id) }}"><i class="fas fa-arrow-left mr-1" aria-hidden="true"></i>Salas</a>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='dsgov/vendor/html5-qrcode/html5-qrcode.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/sala.js', v=VERSAO_ESTILO) }}"></script>
+{% endblock %}

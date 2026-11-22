@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from '_macros.html' import ajuda_titulo, pre_titulo %}
+{% from "_macros.html" import select, cabecalho_tabela, th_ordem %}
+{% block titulo %}Termos emitidos{% endblock %}
+{% block conteudo %}
+{{ pre_titulo('Termos de Responsabilidade') }}
+<div class="d-flex align-items-center mb-4"><h1 class="mb-0">Termos emitidos</h1>{{ ajuda_titulo(AJUDA_ANCORA) }}</div>
+<form method="get" class="row mb-4">
+  <div class="col-md-3 mb-3">{{ select('tipo', 'Tipo', [('', 'Todos')] + rotulos.items()|list, selecionado=tipo or '', obrigatorio=False) }}</div>
+  <div class="col-md-4 mb-3"><div class="br-input"><label for="chave">Centro de custo ou pessoa</label><input id="chave" name="chave" type="text" value="{{ chave or '' }}" placeholder="contém..."/></div></div>
+  <div class="col-md-2 mb-3 d-flex align-items-end"><button class="br-button secondary" type="submit"><i class="fas fa-filter mr-1" aria-hidden="true"></i>Filtrar</button></div>
+</form>
+{{ cabecalho_tabela('Registros de emissão', 'emitidos', servidor=truncado) }}
+  <thead><tr>{{ th_ordem('Emitido em', 'emitido') }}{{ th_ordem('Tipo', 'tipo') }}{{ th_ordem('Centro / pessoa', 'chave') }}{{ th_ordem('Bens', 'bens', 'dsgov-numero') }}{{ th_ordem('Valor', 'valor', 'dsgov-numero') }}{{ th_ordem('Número', 'numero') }}{{ th_ordem('Processo SEI', 'processo') }}{{ th_ordem('Documento · bloco', 'documento') }}{{ th_ordem('E-mail', 'email') }}</tr></thead>
+  <tbody>
+  {% for t in termos %}
+  <tr>
+    <td><a href="{{ url_for('termo_emitido_tela', id=t.id) }}">{{ t.emitido_em[8:10] }}/{{ t.emitido_em[5:7] }}/{{ t.emitido_em[:4] }} {{ t.emitido_em[11:16] }}</a></td>
+    <td>{{ rotulos[t.tipo] }}</td><td>{{ t.chave }}</td>
+    <td class="dsgov-numero">{{ t.quantidade }}</td><td class="dsgov-numero">{{ (t.valor_total)|moeda }}</td>
+    <td>{{ t.numero_termo or '—' }}</td>
+    <td>{{ t.numero_sei|link_sei(t.id_procedimento) }} · {{ t.processo }}</td>
+    <td>{% if t.id in enviando %}<span class="br-tag bg-info text-pure-0"><span>enviando…</span></span>{% else %}{{ t.documento_sei|link_sei(t.id_documento, 'documento') if t.documento_sei else '—' }} · {{ t.bloco_sei or '—' }}{% endif %}</td>
+    <td>{% if t.email_enviado_em %}<span class="br-tag bg-success text-pure-0"><span>{{ t.email_enviado_em[8:10] }}/{{ t.email_enviado_em[5:7] }}/{{ t.email_enviado_em[:4] }}</span></span>{% else %}—{% endif %}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="9">Nenhum termo registrado{% if tipo or chave %} com esse filtro{% endif %}.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

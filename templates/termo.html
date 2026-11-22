@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% from '_macros.html' import ajuda_titulo, pre_titulo %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block conteudo %}
+{{ pre_titulo('Termos de Responsabilidade') }}
+<div class="d-flex align-items-center mb-4">
+  <h1 class="mb-0">{{ titulo }}</h1>{{ ajuda_titulo(AJUDA_ANCORA) }}
+  {% if processo and pode('termo_docx') %}
+  <div class="ml-auto">
+    {% if LOGIN_ATIVO and pode('termo_enviar_sei', 'POST') %}<form method="post" action="{{ url_for('termo_enviar_sei', tipo=tipo, chave=chave) }}" class="d-inline mr-2">{{ csrf_campo() }}<button class="br-button primary" type="submit"><i class="fas fa-paper-plane mr-1" aria-hidden="true"></i>Emitir Termo no SEI</button></form>{% endif %}
+    <button class="br-button secondary" type="button" id="copiar" data-registrar="{{ url_for('termo_registrar', tipo=tipo, chave=chave) }}"><i class="fas fa-copy mr-1" aria-hidden="true"></i>Copiar para o SEI</button>
+    <a class="br-button secondary ml-2" href="{{ url_for('termo_docx', tipo=tipo, chave=chave) }}"><i class="fas fa-download mr-1" aria-hidden="true"></i>Baixar .docx</a>
+    {% if tipo == 'ccusto' %}<a class="br-button ml-2" href="{{ url_for('termo_planilha', chave=chave) }}">Baixar planilha</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% if not processo %}
+<div class="br-message danger"><div class="icon"><i class="fas fa-times-circle fa-lg" aria-hidden="true"></i></div>
+  <div class="content" role="alert"><span class="message-title">Sem processo SEI.</span><span class="message-body"> Cadastre um processo SEI vigente para {{ rotulo_tipo }} em <a href="{{ url_for('cadastros', aba='processos') }}">Cadastros → Processos SEI</a> para copiar ou baixar este termo.</span></div></div>
+{% else %}
+<p class="text-gray-70 mb-3">Processo SEI {{ processo.numero_sei|link_sei(processo.id_procedimento) }} ({{ processo.descricao }}).
+  {% if situacao.ultimo %}Último termo registrado em {{ situacao.ultimo.emitido_em[8:10] }}/{{ situacao.ultimo.emitido_em[5:7] }}/{{ situacao.ultimo.emitido_em[:4] }} {{ situacao.ultimo.emitido_em[11:16] }}{% if situacao.ultimo.documento_sei %} (SEI {{ situacao.ultimo.documento_sei }}){% endif %}
+    (<a href="{{ url_for('termo_emitido_tela', id=situacao.ultimo.id) }}">ver registro</a>).
+    {% if situacao.estado == 'vigente' %}Bens iguais aos de hoje.{% elif situacao.estado == 'desatualizado' %}Desde então entraram {{ situacao.entraram }} e saíram {{ situacao.sairam }} bem(ns): emita de novo.{% endif %}
+  {% else %}Nenhum termo registrado para {{ chave }}.{% endif %}</p>
+{% endif %}
+<div id="aviso-copiado" class="br-message d-none">
+  <div class="icon"><i class="fas fa-check-circle fa-lg" aria-hidden="true"></i></div>
+  <div class="content" role="alert"><span class="message-title" id="aviso-titulo">Copiado.</span><span class="message-body" id="aviso-texto"> Cole no editor do SEI (Ctrl+V).</span></div>
+</div>
+{% if quantidade == 0 %}
+<div class="br-message warning"><div class="icon"><i class="fas fa-exclamation-triangle fa-lg" aria-hidden="true"></i></div>
+  <div class="content" role="alert"><span class="message-title">Atenção.</span><span class="message-body"> Nenhum bem neste termo.</span></div></div>
+{% endif %}
+<div class="br-card"><div class="card-content">
+  <iframe id="documento" title="{{ titulo }}" src="{{ url_for('termo_documento', tipo=tipo, chave=chave) }}" width="100%" height="900"></iframe>
+</div></div>
+{% endblock %}
+{% block scripts %}
+{% if processo and pode('termo_docx') %}
+<script>
+document.getElementById("copiar").addEventListener("click", async function () {
+  var corpo = document.getElementById("documento").contentDocument.body;
+  var html = corpo.innerHTML, texto = corpo.innerText, copiou = false;
+  var aviso = document.getElementById("aviso-copiado"), tituloAviso = document.getElementById("aviso-titulo"), textoAviso = document.getElementById("aviso-texto");
+  try {
+    await navigator.clipboard.write([new ClipboardItem({
+      "text/html": new Blob([html], {type: "text/html"}),
+      "text/plain": new Blob([texto], {type: "text/plain"})})]);
+    copiou = true;
+  } catch (e) {
+    var docIframe = corpo.ownerDocument, sel = docIframe.defaultView.getSelection(), range = docIframe.createRange();
+    range.selectNodeContents(corpo); sel.removeAllRanges(); sel.addRange(range);
+    copiou = docIframe.execCommand("copy") === true; sel.removeAllRanges();
+  }
+  aviso.className = "br-message d-none " + (copiou ? "success" : "danger");
+  tituloAviso.textContent = copiou ? "Copiado." : "Não copiado.";
+  if (!copiou) {
+    textoAviso.textContent = " Não foi possível copiar. Selecione o texto do documento e copie com Ctrl+C.";
+    aviso.classList.remove("d-none");
+    setTimeout(function () { aviso.classList.add("d-none"); }, 8000);
+    return;   // sem cópia não há emissão a registrar
+  }
+  textoAviso.textContent = " Cole no editor do SEI (Ctrl+V).";
+  try {
+    var r = await fetch(this.dataset.registrar, {method: "POST", headers: {"X-CSRF": document.querySelector('meta[name="csrf"]').content}});
+    var j = await r.json();
+    textoAviso.textContent = r.ok ? " Cole no editor do SEI (Ctrl+V). Emissão registrada às " + j.emitido_em.slice(11, 16) + "." : " " + j.erro;
+  } catch (e) { textoAviso.textContent += " (não foi possível registrar a emissão)"; }
+  aviso.classList.remove("d-none");
+  setTimeout(function () { aviso.classList.add("d-none"); }, 5000);
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,130 @@
+/* Paleta institucional CFC (a mesma do portal Astro: azul-marinho #00407b). */
+:root,
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #00407b;
+  --md-primary-fg-color--light: #2d5f93;
+  --md-primary-fg-color--dark: #002b54;
+  --md-accent-fg-color: #00407b;
+  --md-accent-fg-color--transparent: rgba(0, 64, 123, 0.1);
+}
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #00407b;
+  --md-primary-fg-color--dark: #002b54;
+  --md-accent-fg-color: #8ab4e8;
+  --md-accent-fg-color--transparent: rgba(138, 180, 232, 0.1);
+  --md-typeset-a-color: #8ab4e8;
+}
+
+/* Logo azul-marinho sobre fundo branco (o cabeçalho é azul) e um pouco maior. */
+.md-header__button.md-logo {
+  background: #fff;
+  border-radius: 6px;
+  padding: 0.2rem 0.4rem;
+  margin: 0.2rem 0.4rem;
+}
+.md-header__button.md-logo img {
+  height: 1.8rem;
+}
+
+/* ===== Controles do checklist ===== */
+.md-typeset .checklist-controls {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 6px;
+  padding: 0.6rem 0.9rem;
+  margin: 1em 0;
+  background: var(--md-code-bg-color);
+}
+.md-typeset .checklist-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.md-typeset .checklist-actions .md-button {
+  font-size: 0.7rem;
+  padding: 0.3em 1em;
+  margin: 0;
+}
+.md-typeset .checklist-progress {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--md-default-fg-color--light);
+}
+.md-typeset .checklist-disclaimer {
+  font-size: 0.7rem;
+  color: var(--md-default-fg-color--light);
+  margin: 0.4em 0 0;
+}
+
+/* Checkbox injetado em cada passo numerado. */
+.md-typeset .steps > ol > li input.checklist-step-checkbox {
+  width: 1rem;
+  height: 1rem;
+  margin: 0 0.5em 0 0;
+  vertical-align: middle;
+  cursor: pointer;
+  accent-color: var(--md-accent-fg-color);
+}
+
+/* Item marcado: feedback sutil sem prejudicar a releitura. */
+.md-typeset .checklist-checked {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+/* Capturas de tela: ocupam a largura do texto e abrem ampliadas ao clicar. */
+.md-typeset img.zoomable {
+  cursor: zoom-in;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 4px;
+}
+
+/* ===== Visualizador de imagem em tela cheia ===== */
+.zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.85);
+  cursor: zoom-out;
+}
+.zoom-overlay.is-open {
+  display: flex;
+}
+.zoom-overlay img {
+  max-width: 100%;
+  max-height: calc(100vh - 5rem);
+  object-fit: contain;
+  background: #fff;
+  border-radius: 4px;
+}
+.zoom-overlay .zoom-caption {
+  color: #fff;
+  font-size: 0.8rem;
+  text-align: center;
+  max-width: 60rem;
+}
+.zoom-overlay .zoom-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  font-size: 2rem;
+  line-height: 1;
+  color: #fff;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+@media print {
+  .md-typeset .checklist-controls {
+    display: none;
+  }
+}

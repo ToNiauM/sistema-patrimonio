@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import ajuda_titulo, pre_titulo %}
+{% from 'cadastros/_campos.html' import campo, ocultos %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block conteudo %}
+{{ pre_titulo('Cadastros') }}
+<div class="d-flex align-items-center mb-4"><h1 class="mb-0">{{ titulo }}</h1>{{ ajuda_titulo(AJUDA_ANCORA) }}</div>
+<p>Pessoa: <strong>{{ nome }}</strong>. Confira o número para consultar o bem antes de atribuí-lo.</p>
+<form method="post" action="{{ url_for('pessoas_atribuir') }}" class="col-md-8" novalidate>{{ csrf_campo() }}
+  {{ ocultos(retorno) }}<input type="hidden" name="nome" value="{{ nome }}"/>
+  {{ campo('numero', 'Número do patrimônio', valores, erros, True) }}
+  <div class="dsgov-acoes-formulario"><a class="br-button" href="{{ retorno }}">Cancelar</a><button class="br-button primary" type="submit">Consultar patrimônio</button></div>
+</form>
+{% endblock %}
+{% block scripts %}{% include 'cadastros/_comportamento.html' %}{% endblock %}

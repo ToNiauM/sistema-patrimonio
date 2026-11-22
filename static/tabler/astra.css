@@ -1,0 +1,132 @@
+/* astra.css — ajustes do protótipo Tabler. Cores e espaços vêm das variáveis do Tabler (var(--tblr-...)). */
+
+.astra-marca { flex-direction: column; align-items: flex-start; gap: .5rem; white-space: normal; }
+.astra-marca img { height: auto; width: 150px; max-width: 100%; background: #fff; border-radius: var(--tblr-border-radius); padding: 4px 6px; }
+.astra-marca span { font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; opacity: .85; }
+@media (max-width: 991.98px) { .astra-marca { flex-direction: row; align-items: center; } .astra-marca img { width: 96px; } }
+
+/* Rótulos longos do menu quebram linha em vez de cortar */
+
+/* Seta do grupo do menu gira quando o grupo abre */
+.navbar-vertical .astra-seta { transition: transform .15s; }
+.navbar-vertical .nav-link[aria-expanded="true"] .astra-seta { transform: rotate(180deg); }
+.navbar-vertical .astra-submenu { padding-left: 2.25rem; }
+.navbar-vertical .astra-submenu .nav-link { padding-top: .35rem; padding-bottom: .35rem; }
+.navbar-vertical .astra-submenu .nav-link.active { color: var(--tblr-navbar-active-color, #fff); font-weight: 600; }
+
+/* Valores numéricos alinham pelas casas */
+.astra-numero { font-variant-numeric: tabular-nums; }
+
+/* Card de indicador em alerta ganha a borda do status à esquerda (card-status-start) */
+.astra-alerta { border-color: var(--tblr-danger); }
+
+/* Submenu legível no fundo escuro e rótulo do grupo sem reticências */
+.navbar-vertical .astra-submenu .nav-link { color: rgba(255, 255, 255, .72); }
+.navbar-vertical .astra-submenu .nav-link:hover { color: #fff; }
+@media (max-width: 991.98px) {
+  /* Celular: linha 1 = marca + botão ☰; linha 2 = menu aberto ocupando a largura toda */
+  .navbar-vertical > .container-fluid { flex-wrap: wrap; align-items: center; }
+  .navbar-vertical > .container-fluid > .astra-marca { order: 1; flex: 1 1 auto; min-width: 0; margin: 0; }
+  .navbar-vertical > .container-fluid > .navbar-toggler { order: 2; flex: 0 0 auto; }
+  .navbar-vertical > .container-fluid > .navbar-collapse { order: 3; flex: 1 1 100%; }
+  .astra-marca span { font-size: .7rem; overflow: hidden; text-overflow: ellipsis; line-height: 1.6; } /* sem o 1.6 o acento de PATRIMÔNIO era cortado */
+}
+
+/* Gráficos ECharts: altura fixa, largura do card */
+.astra-grafico { width: 100%; height: 280px; }
+.astra-grafico-alto { width: 100%; height: 400px; }
+.astra-grafico-extra { width: 100%; height: 640px; }
+button[aria-expanded="true"] > .astra-seta { transform: rotate(180deg); }
+
+/* Coluna de ações nunca quebra e encosta à direita */
+.table td.astra-acoes, .table th.astra-acoes { white-space: nowrap; text-align: right; width: 1%; }
+
+/* Bloco de detalhe (rótulo em cima, valor embaixo) */
+.astra-detalhe dt { color: var(--tblr-secondary); font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; margin-bottom: .25rem; font-weight: 500; }
+.astra-detalhe dd { margin: 0 0 1rem 0; font-weight: 500; }
+
+/* Tela de login centralizada (sem menu) */
+.astra-login { min-height: 100vh; }
+
+@media print {
+  .navbar-vertical, header.navbar, .footer, .btn, form[role="search"] { display: none !important; }
+  .page-wrapper { margin: 0 !important; }
+  .card { box-shadow: none; border: 0; }
+}
+
+/* Miniatura de foto (inventário, relatório); bem.html usa uma maior */
+.astra-miniatura { width: 56px; height: 56px; object-fit: cover; border-radius: var(--tblr-border-radius); }
+
+/* Abas que rolam na horizontal no celular em vez de quebrar linha */
+.astra-abas { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; }
+.astra-abas .nav-link { white-space: nowrap; }
+
+/* Cabeçalho ordenável: o link herda a cor do texto */
+.table th a.astra-ordem { color: inherit; text-decoration: none; }
+.table th a.astra-ordem:hover { text-decoration: underline; }
+
+/* ---------- Harmonização (auditoria de 22/09) ---------- */
+
+/* Ajuda colada ao título, discreta, mesma posição em todas as telas */
+.page-title { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.astra-ajuda { margin-left: .5rem; color: var(--tblr-secondary); font-size: 1rem; line-height: 1; text-decoration: none; }
+.astra-ajuda:hover, .astra-ajuda:focus { color: var(--tblr-primary); }
+
+/* Busca local no cabeçalho do card: largura fixa, ícone alinhado */
+.astra-busca-tabela { width: 16rem; max-width: 100%; }
+@media (max-width: 575.98px) { .astra-busca-tabela { width: 100%; } }
+
+/* Tabelas mais densas e uniformes: sem listras, cabeçalho neutro (links de ordenação herdam a cor) */
+.card-table > :not(caption) > * > * { padding-top: .6rem; padding-bottom: .6rem; }
+.table thead th a { color: inherit; text-decoration: none; }
+.table thead th a:hover { color: var(--tblr-primary); }
+.table tbody tr:hover > * { background-color: var(--tblr-bg-surface-secondary, rgba(0,0,0,.02)); }
+
+/* Grupos de botões com o mesmo espaçamento */
+.btn-list { gap: .5rem; }
+
+/* Celular: trilha só com o nível anterior ("‹ Cadastros"), para não quebrar em duas linhas */
+@media (max-width: 767.98px) {
+  .breadcrumb .breadcrumb-item:not(:nth-last-child(2)) { display: none; }
+  .breadcrumb .breadcrumb-item:nth-last-child(2)::before { content: "‹"; padding-right: .35rem; float: none; }
+  .breadcrumb .breadcrumb-item + .breadcrumb-item::before { content: none; }
+  .page-header .btn-list { width: 100%; }
+}
+.page-title .astra-ajuda { margin-left: .1rem; }
+
+/* Menu lateral largo o bastante para "Termos de Responsabilidade" e o nome do sistema caberem numa linha */
+:root { --tblr-sidebar-width: 19rem; }
+.navbar-vertical .nav-link .astra-seta { margin-left: auto !important; padding-left: .75rem; flex-shrink: 0; box-sizing: content-box; }
+.navbar-vertical .nav-link-title, .navbar-vertical .astra-submenu .nav-link, .astra-marca span { white-space: nowrap; }
+/* Item de grupo ocupa a largura toda: a seta vai para a direita, longe do rótulo */
+.navbar-vertical .navbar-nav > .nav-item > .nav-link { width: 100%; }
+
+/* ---------- Tabelas ordenáveis e com largura ajustável (static/js/tabelas.js, <table data-tabela>) ---------- */
+/* Ordenar: o botão é o .table-sort do próprio Tabler (setas e estados asc/desc vêm de tabler.min.css). */
+.table thead th .table-sort { cursor: pointer; }
+.table thead th .table-sort:focus-visible { outline: 2px solid var(--tblr-primary); outline-offset: -2px; border-radius: var(--tblr-border-radius-sm, 2px); }
+/* Alça de largura na borda direita do cabeçalho: linha fina que acende com a cor primária. */
+table[data-tabela] thead th { position: relative; }
+table[data-tabela] .tabela-alca { position: absolute; top: 0; right: -4px; bottom: 0; width: 9px; z-index: 2; cursor: col-resize; touch-action: none; }
+table[data-tabela] .tabela-alca::after { content: ""; position: absolute; top: 25%; bottom: 25%; left: 4px; width: 1px; background: var(--tblr-border-color); transition: background-color .15s; }
+table[data-tabela] thead th:last-child .tabela-alca { right: 0; }
+table[data-tabela] .tabela-alca:hover::after, table[data-tabela] .tabela-alca:focus-visible::after,
+table[data-tabela].tabela-redimensionando .tabela-alca::after { top: 0; bottom: 0; width: 2px; left: 3px; background: var(--tblr-primary); }
+table[data-tabela] .tabela-alca:focus-visible { outline: none; }
+table.tabela-redimensionando { cursor: col-resize; user-select: none; }
+/* Largura ajustada: layout fixo, texto longo corta com reticências em vez de empurrar a coluna. */
+table.tabela-fixa { table-layout: fixed; }
+table.tabela-fixa th, table.tabela-fixa td { overflow: hidden; text-overflow: ellipsis; }
+@media print {
+  table[data-tabela] .tabela-alca, table[data-tabela] .table-sort::after { display: none !important; }
+  table.tabela-fixa { table-layout: auto !important; width: auto !important; }
+  table.tabela-fixa th { width: auto !important; }
+}
+/* Celular: sem alças e sem largura salva — a tabela volta ao layout automático e rola na horizontal
+   dentro do contêiner (largura ajustada no computador não espreme colunas numa tela de 390px). */
+@media (max-width: 767.98px) {
+  table[data-tabela] .tabela-alca { display: none !important; }
+  table.tabela-fixa { table-layout: auto !important; width: auto !important; }
+  table.tabela-fixa th { width: auto !important; }
+  table.tabela-fixa th, table.tabela-fixa td { overflow: visible; text-overflow: clip; }
+}
