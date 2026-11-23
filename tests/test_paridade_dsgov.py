@@ -200,7 +200,7 @@ def test_analise_dsgov_filtro_fixado_sai_do_seletor(cliente):
     assert 'value="ccusto"' not in html.split('data-grafico-seletor="g-explorar">', 1)[1].split("Ver dados", 1)[0]
 
 
-def test_analise_js_complementa_o_tema_da_padrao():
+def test_analise_js_complementa_o_tema_do_padrao():
     import graficos
     # cores da classificação: o espelho da paleta do Python é trocado pela categórica oficial (dsgov.graficos)
     for cor in graficos.CORES_CATEGORICA:
