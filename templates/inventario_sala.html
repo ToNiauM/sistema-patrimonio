@@ -4,7 +4,7 @@
 
 {#- Sala virtual na casca DSGov: o desenho de templates/tabler/inventario_sala.html com componentes do padrão DSGov.
     Três seções (Pendentes, Divergentes, Localizados) num br-tab com contador; cada bem aparece duas vezes, na Lista
-    (br-list, compacta, sem foto) e nos Quadros (br-card com br-avatar); o botão Lista/Quadros escolhe qual se vê.
+    (br-list, compacta, sem foto) e nos Quadros (br-card com a foto quadrada no topo); o botão Lista/Quadros escolhe qual se vê.
     secao: pendente | localizado | divergente (onde o bem aparece). Os data-papel são os ganchos de static/js/sala.js. #}
 {% macro situacao_tag(b, secao) %}
 {% if secao == 'localizado' %}<span class="br-tag small bg-success" data-papel="situacao">Localizado</span>
@@ -17,7 +17,7 @@
 
 {% macro avatar_bem(b) %}
 {% set f = b.fotos[0] if b.fotos else None %}
-<span class="br-avatar" data-papel="avatar" title="{{ 'Foto do bem' if f else 'Bem sem foto' }}"><span class="content">{% if f and f.url.startswith(('http://', 'https://')) %}<img src="{{ f.url }}" alt="Foto {{ f.nfoto }} do bem {{ b.numero }}"/>{% else %}<i class="fas {{ icone_categoria(b.classificacao) }}" aria-hidden="true"></i>{% endif %}</span></span>
+<div class="bg-gray-2 text-gray-40" data-papel="avatar" title="{{ 'Foto do bem' if f else 'Bem sem foto' }}">{% if f and f.url.startswith(('http://', 'https://')) %}<img src="{{ f.url }}" alt="Foto {{ f.nfoto }} do bem {{ b.numero }}" loading="lazy"/>{% else %}<i class="fas {{ icone_categoria(b.classificacao) }} fa-3x" aria-hidden="true"></i>{% endif %}</div>
 {% endmacro %}
 
 {% macro data_curta(iso) %}{{ iso[8:10] }}/{{ iso[5:7] }}/{{ iso[:4] }} {{ iso[11:16] }}{% endmacro %}
@@ -68,12 +68,11 @@
 </div>
 {% endmacro %}
 
-{# Quadros: avatar (foto ou ícone da categoria) à esquerda, informações ao lado, seleção e ações à direita #}
+{# Quadros (estilo vitrine): foto quadrada em largura total no topo (ou o ícone da categoria), informações embaixo, seleção e ações à direita #}
 {% macro item_grade(b, secao, fechado) %}
 <div class="col-sm-6 col-lg-4 mb-3" {{ atributos(b, secao, 'grade') }}>
-  <div class="br-card mb-0"><div class="card-content">
-    <div class="row align-items-center flex-nowrap">
-      <div class="col-auto">{{ avatar_bem(b) }}</div>
+  <div class="br-card mb-0 h-100">{{ avatar_bem(b) }}<div class="card-content">
+    <div class="row align-items-start flex-nowrap">
       <div class="col text-truncate">
         <div class="d-flex align-items-center justify-content-between">{{ numero_bem(b) }}{{ situacao_tag(b, secao) }}</div>
         <div class="text-weight-semi-bold text-truncate" data-papel="descricao">{{ b.descricao }}{% if b.complemento %} {{ b.complemento }}{% endif %}</div>

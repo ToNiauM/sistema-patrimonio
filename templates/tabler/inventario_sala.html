@@ -3,7 +3,7 @@
 {% block titulo %}{{ localizacao }}{% endblock %}
 
 {# Sala virtual: três seções (Pendentes, Divergentes, Localizados) escolhidas pelos cards do topo.
-   Cada bem aparece duas vezes: na Lista (compacta, sem foto) e nos Quadros (o card com avatar/foto à esquerda); o botão Lista/Quadros escolhe qual se vê.
+   Cada bem aparece duas vezes: na Lista (compacta, sem foto) e nos Quadros (o card de vitrine, com a foto quadrada no topo); o botão Lista/Quadros escolhe qual se vê.
    secao: pendente | localizado | divergente (onde o bem aparece). Só componentes e classes nativos do Tabler. #}
 {% macro situacao_badge(b, secao) %}
 {% if secao == 'localizado' %}<span class="badge flex-shrink-0 bg-green-lt" data-papel="situacao">Localizado</span>
@@ -16,8 +16,8 @@
 
 {% macro avatar_bem(b) %}
 {% set f = b.fotos[0] if b.fotos else None %}
-{% if f and f.url.startswith(('http://', 'https://')) %}<span data-papel="avatar"><img class="avatar avatar-lg avatar-square object-cover" src="{{ f.url }}" alt="Foto {{ f.nfoto }} do bem {{ b.numero }}"/></span>
-{% else %}<span class="avatar avatar-lg avatar-square" data-papel="avatar"><i class="ti {{ icone_categoria(b.classificacao) }}" aria-hidden="true"></i></span>{% endif %}
+{% if f and f.url.startswith(('http://', 'https://')) %}<div class="ratio ratio-1x1 card-img-top overflow-hidden bg-secondary-lt" data-papel="avatar" title="Foto do bem"><img class="object-cover" src="{{ f.url }}" alt="Foto {{ f.nfoto }} do bem {{ b.numero }}" loading="lazy"/></div>
+{% else %}<div class="ratio ratio-1x1 card-img-top overflow-hidden bg-secondary-lt text-secondary" data-papel="avatar" title="Bem sem foto"><div class="d-flex align-items-center justify-content-center"><i class="ti {{ icone_categoria(b.classificacao) }} display-4" aria-hidden="true"></i></div></div>{% endif %}
 {% endmacro %}
 
 {% macro data_curta(iso) %}{{ iso[8:10] }}/{{ iso[5:7] }}/{{ iso[:4] }} {{ iso[11:16] }}{% endmacro %}
@@ -66,10 +66,9 @@
 </div>
 {% endmacro %}
 
-{# Quadros: o card de sempre — avatar/foto pequena à esquerda, informações ao lado, seleção e ações à direita #}
+{# Quadros (vitrine): a foto quadrada fica no topo do card (item_grade); aqui as informações, com seleção e ações à direita #}
 {% macro item_bem(b, secao, fechado) %}
-<div class="row g-3 align-items-center">
-  <div class="col-auto">{{ avatar_bem(b) }}</div>
+<div class="row g-3 align-items-start">
   <div class="col text-truncate">
     <div class="d-flex align-items-center justify-content-between gap-2">
       <a class="fw-bold" href="{{ url_for('bem', numero=b.numero) }}" data-papel="numero" title="Abrir o cadastro do bem {{ b.numero }}">{{ b.numero }}</a>
@@ -106,7 +105,7 @@
   </div>
 </div>
 {% endmacro %}
-{% macro item_grade(b, secao, fechado) %}<div class="col-sm-6 col-lg-4" {{ atributos(b, secao) }}><div class="card h-100 cursor-pointer"><div class="card-body">{{ item_bem(b, secao, fechado) }}</div></div></div>{% endmacro %}
+{% macro item_grade(b, secao, fechado) %}<div class="col-sm-6 col-lg-4" {{ atributos(b, secao) }}><div class="card h-100 cursor-pointer">{{ avatar_bem(b) }}<div class="card-body">{{ item_bem(b, secao, fechado) }}</div></div></div>{% endmacro %}
 
 {# Uma seção nas duas visualizações (Lista e Quadros; o botão acima da busca escolhe). Sem JS: lista no
    celular e quadros no desktop. A caixa da lista some quando a seção está vazia. #}
@@ -421,17 +420,21 @@
     if (f.secao === "divergente") return f.situacao === "ATIVO" ? ["Divergente", "bg-yellow-lt"] : ["Não ativo", "bg-red-lt"];
     return ["Pendente", "bg-secondary-lt"];
   }
-  // Avatar do quadro (a lista não tem foto): primeira foto ou o ícone da categoria.
+  // Foto quadrada do quadro (a lista não tem foto): primeira foto ou o ícone da categoria.
   function trocarAvatar(el, numero, fotos) {
-    var atual = el.querySelector('[data-papel="avatar"]'), novo = document.createElement("span"), f = fotos[0];
+    var atual = el.querySelector('[data-papel="avatar"]'), novo = document.createElement("div"), f = fotos[0];
     if (!atual) return;
     novo.dataset.papel = "avatar";
+    novo.className = "ratio ratio-1x1 card-img-top overflow-hidden bg-secondary-lt";
     if (f && /^https?:\/\//.test(f.url)) {
-      var img = document.createElement("img"); img.className = "avatar avatar-lg avatar-square object-cover"; img.src = f.url; img.alt = "Foto " + f.nfoto + " do bem " + numero;
+      novo.title = "Foto do bem";
+      var img = document.createElement("img"); img.className = "object-cover"; img.src = f.url; img.alt = "Foto " + f.nfoto + " do bem " + numero;
       novo.appendChild(img);
     } else {
-      novo.className = "avatar avatar-lg avatar-square";
-      var i = document.createElement("i"); i.className = "ti " + (el.dataset.icone || "ti-package"); i.setAttribute("aria-hidden", "true"); novo.appendChild(i);
+      novo.title = "Bem sem foto"; novo.classList.add("text-secondary");
+      var caixa = document.createElement("div"); caixa.className = "d-flex align-items-center justify-content-center";
+      var i = document.createElement("i"); i.className = "ti " + (el.dataset.icone || "ti-package") + " display-4"; i.setAttribute("aria-hidden", "true");
+      caixa.appendChild(i); novo.appendChild(caixa);
     }
     atual.replaceWith(novo);
   }

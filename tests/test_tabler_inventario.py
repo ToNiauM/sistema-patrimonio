@@ -86,10 +86,11 @@ def test_sala_no_tabler_leitura_lote_e_fotos(tabler, monkeypatch):
     item = html.split('id="lista-localizados"')[1].split('data-bem="1001"')[1].split('data-bem="')[0]   # Lista: sem foto
     assert "<img" not in item and "avatar" not in item and "+1 foto(s)" in item   # excluir foto: na ficha (modal)
     assert 'class="foto-input" hidden/>' in item and ">Localizado<" in item and "sem conservação" in item and "JAQUELINE PORTELA" in item
-    quadro = html.split('id="grade-localizados"')[1].split('data-bem="1001"')[1].split('data-bem="')[0]   # Quadros: avatar à esquerda
-    assert quadro.count('<img class="avatar avatar-lg avatar-square object-cover" src="https://x/1.webp"') == 1 and "+1 foto(s)" in quadro
-    assert quadro.index('data-papel="avatar"') < quadro.index('data-papel="numero"') < quadro.index('data-papel="selecao"')   # avatar | info | seleção e ações
-    assert 'class="col-sm-6 col-lg-4"' in html.split('id="grade-localizados"')[1][:200] and "card-img-top" not in quadro and "Selecionar<" not in quadro
+    quadro = html.split('id="grade-localizados"')[1].split('data-bem="1001"')[1].split('data-bem="')[0]   # Quadros: vitrine, foto quadrada no topo
+    assert quadro.count('<img class="object-cover" src="https://x/1.webp"') == 1 and "+1 foto(s)" in quadro
+    assert 'class="ratio ratio-1x1 card-img-top' in quadro   # foto quadrada em largura total
+    assert quadro.index('data-papel="avatar"') < quadro.index('data-papel="numero"') < quadro.index('data-papel="selecao"')   # foto em cima | info | seleção e ações
+    assert 'class="col-sm-6 col-lg-4"' in html.split('id="grade-localizados"')[1][:200] and "Selecionar<" not in quadro
     assert "JAQUELINE PORTELA" in quadro and "ti ti-armchair" not in quadro   # responsável do centro; tem foto, sem ícone
     item2 = html.split('id="grade-pendentes"')[1].split('data-bem="1002"')[1].split('data-bem="')[0]
     assert 'class="foto-input" hidden disabled' in item2 and ">Pendente<" in item2 and "ti ti-package" in item2   # sem foto: ícone genérico
@@ -299,9 +300,9 @@ def test_sala_visoes_lista_e_quadros(tabler, monkeypatch):
             assert f'data-bem="{n}"' in lista and f'data-bem="{n}"' in grade
         assert "<img" not in lista and 'data-papel="avatar"' not in lista and "avatar" not in lista   # Lista nunca tem foto
         assert grade.count('data-papel="avatar"') == len(numeros)   # Quadros: foto ou ícone em todo bem
-    assert '<img class="avatar avatar-lg avatar-square object-cover" src="https://x/1.webp"' in html
-    assert '<img class="avatar avatar-lg avatar-square object-cover" src="https://x/3.webp"' in html
-    assert '<span class="avatar avatar-lg avatar-square" data-papel="avatar"><i class="ti ti-package"' in html   # sem foto: ícone da categoria
+    assert '<img class="object-cover" src="https://x/1.webp"' in html
+    assert '<img class="object-cover" src="https://x/3.webp"' in html
+    assert 'data-papel="avatar" title="Bem sem foto"><div class="d-flex align-items-center justify-content-center"><i class="ti ti-package display-4"' in html   # sem foto: ícone da categoria
     # os modelos do bem lido ao vivo também seguem as duas visualizações
     modelos = html.split('<template id="modelo-lista">')[1]
     assert "<img" not in modelos.split("</template>")[0] and 'data-papel="avatar"' in modelos.split('<template id="modelo-grade">')[1].split("</template>")[0]

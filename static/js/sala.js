@@ -132,20 +132,19 @@
   function no(tag, classe, texto) { var n = document.createElement(tag); if (classe) n.className = classe; if (texto !== undefined) n.textContent = texto; return n; }
   function link(href, texto) { var a = no("a", "", texto); a.href = href; return a; }
   function icone(classe) { var i = no("i", classe); i.setAttribute("aria-hidden", "true"); return i; }
-  // Avatar do quadro (a lista não tem foto): primeira foto ou o ícone da categoria.
+  // Foto quadrada do quadro (a lista não tem foto): primeira foto ou o ícone da categoria.
   function trocarAvatar(el, numero, fotos) {
     var atual = el.querySelector('[data-papel="avatar"]'), f = fotos[0];
     if (!atual) return;
-    var novo = no("span", "br-avatar"), conteudo = no("span", "content");
+    var novo = no("div", "bg-gray-2 text-gray-40");
     novo.dataset.papel = "avatar";
     if (f && /^https?:\/\//.test(f.url)) {
       novo.title = "Foto do bem";
-      var img = no("img"); img.src = f.url; img.alt = "Foto " + f.nfoto + " do bem " + numero; conteudo.appendChild(img);
+      var img = no("img"); img.src = f.url; img.alt = "Foto " + f.nfoto + " do bem " + numero; novo.appendChild(img);
     } else {
       novo.title = "Bem sem foto";
-      conteudo.appendChild(icone("fas " + (el.dataset.icone || "fa-box")));
+      novo.appendChild(icone("fas " + (el.dataset.icone || "fa-box") + " fa-3x"));
     }
-    novo.appendChild(conteudo);
     atual.replaceWith(novo);
   }
   function selos(el) {
