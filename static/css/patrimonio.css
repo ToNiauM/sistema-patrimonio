@@ -98,8 +98,8 @@ section.br-card[id][aria-labelledby] { scroll-margin-top: calc(var(--spacing-sca
 [data-bem] { cursor: pointer; }
 [data-papel="caixa-lista"] .br-item { padding: var(--spacing-scale-base) var(--spacing-scale-2x); }
 [data-papel="caixa-lista"] .br-item + .br-item { border-top: var(--surface-width-sm) solid var(--border-color); }
-/* Quadros em vitrine: foto quadrada em largura total no topo do card, recortada; sem foto, o ícone centralizado. */
-[data-bem] [data-papel="avatar"] { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 1 / 1; overflow: hidden; border-radius: var(--surface-rounder-md) var(--surface-rounder-md) 0 0; }
+/* Quadros: foto quadrada de 80px à esquerda, recortada e de cantos arredondados; sem foto, o ícone centralizado. */
+[data-bem] [data-papel="avatar"] { display: flex; align-items: center; justify-content: center; width: 80px; height: 80px; flex-shrink: 0; overflow: hidden; border-radius: var(--surface-rounder-md); }
 [data-bem] [data-papel="avatar"] img { display: block; width: 100%; height: 100%; object-fit: cover; }
 [data-bem] [data-papel="selos"] .br-tag, [data-bem] [data-papel="encontrado"] { margin: 0 var(--spacing-scale-half) var(--spacing-scale-half) 0; }
 /* Menu ⋮ do bem: o Dropdown do core põe a lista em position:absolute à esquerda do botão; aqui ela abre para a

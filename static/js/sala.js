@@ -143,7 +143,7 @@
       var img = no("img"); img.src = f.url; img.alt = "Foto " + f.nfoto + " do bem " + numero; novo.appendChild(img);
     } else {
       novo.title = "Bem sem foto";
-      novo.appendChild(icone("fas " + (el.dataset.icone || "fa-box") + " fa-3x"));
+      novo.appendChild(icone("fas " + (el.dataset.icone || "fa-box") + " fa-2x"));
     }
     atual.replaceWith(novo);
   }
